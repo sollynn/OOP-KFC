@@ -1,1 +1,67 @@
 
+class System:
+    def __init__(self,member,branch,stock,promotion):
+        self.__branch = []
+        self.__stock = []
+        self.__promotion = []
+        self.__member_list = []
+    def search_member(self,member_list,ID):
+        if not isinstance(ID, Member):
+            return "Error"
+        else:
+            for member in member_list:
+                if member.ID == ID:
+                    return member
+    
+    def view_basket(self,member):
+        return member.view_basket()       
+
+    def create_member(self,username,password):
+        pass
+    def add_branch(self,branch):
+        pass
+    def add_boxset(self,boxset):
+        pass
+    def login(self,username,password):
+        pass
+    def edit_password(self,username,password):
+        pass
+    def create_order(self,order):
+        pass
+    def check_stock(self,stock):
+        pass
+class picked_item:
+    pass
+class Basket:
+    def __init__(self,items):
+        self.__items= []
+    def add_basket_item(self,item,quantity):
+        pass #เพื่อนเขียน
+    def remove_basket_item(self,item,quantity):
+        pass #เพื่อนเขียน
+    def calculate_total_price(self):
+        total_price = 0
+        for item in self.__basket:
+            total_price = sum(item.picked_item()["price"] * item.picked_item()["quantity"] for item in self.__basket)
+        return total_price
+    def item_selected(self,total_price):
+        total_price = self.calculate_total_price()
+        items = [item.get_item_info() for item in self.__basket]
+        return items, total_price
+
+
+
+class Member:
+    def __init__(self,username,password,order_history,current_basket:Basket):
+        self.__username = username
+        self.__password = password
+        self.__order_history = order_history
+        self.__current_basket = current_basket
+    def view_basket(self):
+        return self.__current_basket.item_selected()
+    def verify_password(self,password):
+        pass
+    def edit_password(self,password):
+        pass
+    def order_history(self):
+        pass
