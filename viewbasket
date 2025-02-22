@@ -6,7 +6,7 @@ class System:
         self.__promotion = []
         self.__member_list = []
     def search_member(self,member_list,ID):
-        if not isinstance(ID, Member):
+        if not isinstance(ID, Member)
             return "Error"
         else:
             for member in member_list:
