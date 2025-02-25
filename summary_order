@@ -1,0 +1,149 @@
+
+class Order :
+    def __init__(self, order_ID, order_type, member):
+        self.__order_ID = order_ID
+        self.__order_type = order_type 
+        self.__member = member
+        
+        
+    def select_order_type(self, order_type):
+        if order_type.lower() in ["delivery", "pickup"]:
+            self.__order_type = order_type.lower()
+            return self.__order_type
+        else:
+            return "Invalid"
+
+    def get_order_type(self):
+        return self.__order_type
+ 
+class System:
+    def __init__(self):
+        self.__branch = []
+        self.__stock = []
+        self.__promotion = []
+        self.__member_list = []
+
+    def search_member(self, ID):
+        for member in self.__member_list:
+            if member.get_id() == ID:
+                return member
+        return None
+
+    def view_basket(self, member):
+        return member.view_basket()
+
+    def create_member(self, username, password):
+        new_member = Member(username, password, [], Basket())
+        self.__member_list.append(new_member)
+        return new_member
+
+    def add_branch(self, branch):
+        self.__branch.append(branch)
+
+    def add_boxset(self, boxset):
+        self.__stock.append(boxset)
+
+    def login(self, username, password):
+        for member in self.__member_list:
+            if member.verify_password(password):
+                return member
+        return None
+
+    def edit_password(self, username, new_password):
+        for member in self.__member_list:
+            if member.get_username() == username:
+                member.edit_password(new_password)
+                return True
+        return False
+
+    def create_order(self, order):
+        pass
+
+    def check_stock(self, stock):
+        return stock in self.__stock
+
+    def summary_order(self, member_id, order: Order):
+        member = self.search_member(member_id)
+        if not member:
+            return None
+
+        user_info = member.get_member_info() 
+        items, total_price = member.view_basket()  
+        order_type = order.get_order_type()  
+
+        return user_info, items, total_price, order_type 
+class PickedItem:
+    def __init__(self, product, quantity):
+        self.__product = product  
+        self.__quantity = quantity
+
+    def get_item_info(self):
+        return {
+            "name": self.__product["name"],
+            "price": self.__product["price"],
+            "quantity": self.__quantity
+        }
+
+
+class Basket:
+    def __init__(self):
+        self.__items = []
+
+    def add_basket_item(self, item: PickedItem):
+        self.__items.append(item)
+
+    def remove_basket_item(self, item_name):
+        self.__items = [item for item in self.__items if item.get_item_info()["name"] != item_name]
+
+    def calculate_total_price(self):
+        total_price = sum(
+            item.get_item_info()["price"] * item.get_item_info()["quantity"] for item in self.__items
+        )
+        return total_price
+
+ 
+    def item_selected(self):
+        items = [item.get_item_info() for item in self.__items]  
+        total_price = self.calculate_total_price()
+        return items, total_price  
+class Member:
+    def __init__(self, username, password, order_history, current_basket: Basket):
+        self.__username = username
+        self.__password = password
+        self.__order_history = order_history
+        self.__current_basket = current_basket
+
+    def get_username(self):
+        return self.__username
+
+    def view_basket(self):
+        return self.__current_basket.item_selected()
+
+    def verify_password(self, password):
+        return self.__password == password
+
+    def edit_password(self, new_password):
+        self.__password = new_password
+
+    def order_history(self):
+        return self.__order_history
+    def order_summary(self, order:Order, basket:Basket):
+        order_s= order.get_order_type
+        basket_s = basket.item_selected
+        member_s = self.__username
+        self.__order_summary = [order_s, basket_s, member_s]
+
+        return self.__order_summary
+
+class Account:
+    def __init__(self, name, surname, account_ID, tel_no, address, email):
+        self.__name = name
+        self.__surname = surname
+        self.__account_ID = account_ID
+        self.__tel_no = tel_no
+        self.__address = address
+        self.__email = email
+    
+    def get_member_info(self):
+        user_info = [self.__name, self.__surname, self.__account_ID, self.__tel_no, self.__address, self.__email]
+        return user_info
