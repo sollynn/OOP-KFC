@@ -1,0 +1,102 @@
+class System:
+    def __init__(self):
+        self.__list_member = []
+        self.__list_stock = []
+
+    def get_food_by_name(self, name):
+        if(isinstance(name,str)):
+            for stock in self.__list_stock:
+                if(stock.get_food.get_name == name):
+                    return stock.get_food
+        else:
+            return "Invalid"
+        
+    def get_member_by_id(self, account_id : str):
+        if(isinstance(account_id,str)):
+            for member in self.__list_member:
+                if(member.get_account_id == account_id):
+                    return member
+        else:
+            return "Error"
+        
+    def  add_basket(member : 'Member', food : 'Food', amount : int):
+        if(isinstance(member,Member) and isinstance(food,Food) and isinstance(amount,float)):
+            member.add_member_basket(food,amount)
+        else:
+            return "Invalid"
+        
+    def get_total_amount_items(self, member : 'Member'):
+        member.get_total_amount_items
+        return "Done"
+
+class Account:
+    def __init__(self, account_id : str):
+        self.__account_id = account_id
+
+    @property
+    def get_account_id(self):
+        return self.__account_id
+
+class Member(Account): 
+    def __init__(self, account_id : str, basket : "Basket"):
+        Account.__init__(self,account_id)
+        self.__basket = basket
+    
+    @property
+    def  add_member_basker(self, food : 'Food', amount : int):
+        if(isinstance(food,Food) and isinstance(amount,float)):
+            self.__basket.add_basket(food,amount)
+            return "Done"
+        else:
+            return "Invalid"
+        
+    @property
+    def get_total_amount_items(self):
+        return self.__basket.get_total_amount_items
+
+class Basket:
+    def __init__(self):
+        self.__list_picking_basket = []
+
+    def add_basket(self, food : 'Food', amount : int):
+        if(isinstance(food,Food) and isinstance(amount,int)):
+            self.__list_picking_basket.append(PickingBasket(food,amount))
+            return "Done"
+        else:
+            return ("Error")
+    
+    @property
+    def get_total_amount_items(self):
+        amount = 0
+        for item in self.__list_picking_basket:
+            amount = amount + item.get_amount
+        return amount
+    
+class PickingBasket:
+    def __init__(self, food : "Food", amount : int):
+        self.__food = food
+        self.__amount = amount
+
+    @property
+    def get_amount(self):
+        return self.__amount
+
+class Stock:
+    def __init__(self, food : "Food", amount : int):
+        self.__food = food
+        self.__amount = amount
+
+    @property
+    def get_food(self):
+        return self.__food
+
+class Food:
+    def __init__(self, name : str, menu_id : str, price : float):
+        self.__name = name
+        self.__menu_id = menu_id
+        self.__price = price
+
+    @property
+    def get_name(self):
+        return self.__name
+
