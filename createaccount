@@ -1,0 +1,75 @@
+from fasthtml.common import *
+from typing import List
+
+app, rt = fast_app()
+
+class System:
+    def __init__(self):
+        self._member_list = []
+
+    def add_member_list(self,account):
+        self._member_list.append(account)
+
+    def create_account(self,name : str ,surname : str ,tel_number : str ,email : str ,username : str ,password : str):
+        new_account = Member(name,surname,tel_number,email,username,password)
+
+        self.add_member_list(new_account)
+        return "Success"
+
+
+
+class Account:
+    def __init__(self,name,surname,tel_number,email):
+        self.__name = name
+        self.__surname = surname
+        self.__tel_number = tel_number
+        self.__email = email
+
+
+class Member(Account):
+    def __init__(self, name, surname, tel_number, email,username,password):
+        super().__init__(name, surname, tel_number, email)
+        self.__username = username
+        self.__password = password
+
+    def change_password(self, old_password, new_password):
+        if old_password == self.__password:
+            self.__password = new_password
+            return "Password changed successfully!"
+        else:
+            return "Old password is incorrect."
+
+    def verify(self, password):
+        if self.__password == password:
+            return "Done"
+        
+
+system = System()
+
+@rt("/")
+def get():
+    return Container(
+        H1("Create Account"),
+        Form(
+            Label("Name:", Input(type="text", id="name", placeholder="Enter your name", requires=True)),
+            Label("Surname:", Input(type="text", id="surname", placeholder="Enter your surname", requires=True)),
+            Label("Phone Number:", Input(type="text", id="tel_number", placeholder="Enter your phone number", requires=True)),
+            Label("Email:", Input(type="email", id="email", placeholder="Enter your email", requires=True)),
+            Label("Username:", Input(type="text", id="username", placeholder="Enter your username", requires=True)),
+            Label("Password:", Input(type="password", id="password", placeholder="Enter your password", requires=True)),
+            Button("Submit", type="submit"),
+
+            
+            method = "post",
+            action="/submit"
+        )
+    )
+
+@rt("/submit")
+def post(name: str, surname: str, tel_number: str, email: str, username: str, password: str):
+    
+    result = system.create_account(name, surname, tel_number, email, username, password)
+    return f"Account creation status: {result}"
+
+
+serve()
