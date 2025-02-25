@@ -1,1 +1,176 @@
+from fasthtml.common import *
+from typing import List
+
+app, rt = fast_app()
+
+class System:
+    def __init__(self):
+        self.__menu_list = []
+        self.__stock_list = []
+        self.__boxset_list = []
+
+    def add_stock_list(self, name: str, id: str, price: int, amount: int):
+        menu = Food(name, id, price)
+        stock = Stock(menu, amount)
+        self.__menu_list.append(menu)
+        self.__stock_list.append(stock)
+
+    def find_menu_by_menu_id(self, menu_list: List[str]):
+        menu_instance = []
+        for menu in menu_list:
+            for stock in self.__stock_list:
+                if menu == stock.get_food_instance().get_food_id():
+                    menu_instance.append(stock.get_food_instance())
+        return menu_instance
+
+    def add_boxset_list(self, boxset_name: str, boxset_id: str, menu_list: List[str], price: int):
+        menu_instance = self.find_menu_by_menu_id(menu_list)
+        self.__boxset_list.append(Boxset(boxset_name, boxset_id, menu_instance, price))
+
+    def search_boxset_by_id(self, boxset_id: str):
+        for boxset in self.__boxset_list:
+            if boxset.get_boxset_id() == boxset_id:
+                return boxset
+
+    def add_boxselect(self, food_type: str, menu_list: List[str], boxset_id: str):
+        menu_instance = self.find_menu_by_menu_id(menu_list)
+        boxselect = BoxSelect(food_type, menu_instance)
+        boxset_instance = self.search_boxset_by_id(boxset_id)
+        if boxset_instance:
+            boxset_instance.add_box_select(boxselect)
+
+    def get_boxset_list(self):
+        return self.__boxset_list
+
+    def choose_menu(self, boxset_id: str, select_dict: dict):
+        boxset_instance = self.search_boxset_by_id(boxset_id)
+        boxselect_list = boxset_instance.get_box_select_list()
+
+        new_boxset_instance = Boxset(boxset_instance.get_boxset_name(),boxset_instance.get_boxset_id(),boxset_instance.get_fixed_menu(),boxset_instance.get_price())
+        for select_list in boxselect_list:
+            new_boxset_instance.add_box_select(select_list)
+
+        
+        for food_type, menu_selected in select_dict.items():
+            for boxselect in boxselect_list:
+                if (boxselect.get_menu_type() == food_type) and (menu_selected in boxselect.get_select_option_id()):
+                    new_boxset_instance.add_selected_menu(self.serch_food_instance_by_id(menu_selected))
+        
+        selected_menu = [menu.get_food_name() for menu in new_boxset_instance.get_fixed_menu()]
+
+        for select in new_boxset_instance.get_selected_menu():
+            selected_menu.append(select.get_food_name())
+            
+        return selected_menu
+
+    def serch_food_instance_by_id(self,food_id):
+        for menu in self.__menu_list:
+            if menu.get_food_id() == food_id:
+                return menu
+
+
+class Food:
+    def __init__(self, food_name: str, food_id: str, price: int):
+        self.__food_name = food_name
+        self.__food_id = food_id
+        self.__food_price = price
+
+    def get_food_name(self):
+        return self.__food_name
+
+    def get_food_id(self):
+        return self.__food_id
+
+    def get_food_price(self):
+        return self.__food_price
+
+
+class Stock:
+    def __init__(self, food_instance: Food, amount: int):
+        self.__food = food_instance
+        self.__amount = amount
+
+    def reduce_amount(self, total: int):
+        self.__amount -= total
+
+    def get_food_instance(self):
+        return self.__food
+
+
+class Boxset:
+    def __init__(self, name: str, boxset_id: str, menu: List[Food], price: int):
+        self.__boxset_name = name
+        self.__boxset_id = boxset_id
+        self.__fixed_menu = menu
+        self.__price = price
+        self.__boxselect = []
+        self.__selected_menu = []
+
+    def get_boxset_id(self):
+        return self.__boxset_id
+
+    def add_box_select(self, box_select):
+        self.__boxselect.append(box_select)
+
+    def get_boxset_name(self):
+        return self.__boxset_name
+
+    def get_fixed_menu(self):
+        return self.__fixed_menu
+
+    def get_box_select_list(self):
+        return self.__boxselect
+
+    def get_price(self):
+        return self.__price
+    
+    def add_selected_menu(self,selected_menu):
+        self.__selected_menu.append(selected_menu)
+
+    def get_selected_menu(self):
+        return self.__selected_menu
+    
+
+class BoxSelect:
+    def __init__(self, menu_type: str, select_option: List[Food]):
+        self.__menu_type = menu_type
+        self.__select_option = select_option
+        
+
+    def select_good_in_set(self, selected: Food):
+        if selected in self.__select_option:
+            self.__selected_menu = selected
+
+    def get_menu_type(self):
+        return self.__menu_type
+
+    def get_select_option(self):
+        return self.__select_option
+
+    
+    def get_select_option_id(self):
+        return [id.get_food_id() for id in self.__select_option]
+
+    
+
+
+system = System()
+system.add_stock_list("Fried Chicken", "67010000", 100, 10)
+system.add_stock_list("Spicy Chicken", "67010001", 30, 10)
+system.add_stock_list("Lemonade Chicken", "67010002", 50, 10)
+system.add_stock_list("Wing Sab Kai Krob", "67010003", 150, 10)
+system.add_stock_list("Mineral Water", "68010000", 30, 10)
+system.add_stock_list("Coca-Cola", "68010001", 40, 10)
+system.add_stock_list("Soda", "68010002", 45, 10)
+
+system.add_boxset_list("ชุดสุดคุ้ม1", "1001", ["67010000", "68010001"], 50)
+system.add_boxset_list("ชุดสุดคุ้ม2", "1002", ["67010001", "67010002"], 100)
+
+system.add_boxselect("Chicken", ["67010000", "67010001"], "1001")
+system.add_boxselect("Fresh Water", ["68010000", "68010002"], "1001")
+
+
+select_menu = system.choose_menu("1001", {"Chicken": "67010000", "Fresh Water": "68010002"})
+
+print(f"Your Boxset Menu: {select_menu}")
 
