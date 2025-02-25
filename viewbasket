@@ -1,6 +1,3 @@
-from fasthtml.common import *
-
-app, rt = fast_app()
 class System:
     def __init__(self):
         self.__branch = []
@@ -114,39 +111,4 @@ test_member = system.create_member("user1", "pass123")
 test_member._Member__current_basket.add_basket_item(PickedItem({"name": "ไก่ทอด", "price": 20}, 2))
 test_member._Member__current_basket.add_basket_item(PickedItem({"name": "นักเก็ต", "price": 30}, 1))
 
-@rt("/")
-def index():
-    return Container(
-        H1("Welcome to the Store"),
-        Button("View Basket", onclick="window.location='/basket'", style="padding: 10px 20px; font-size: 18px;")
-    )
 
-@rt("/basket")
-def view_basket():
-    member = system.search_member("user1")  # ค้นหาสมาชิกจากระบบ
-    if not member:
-        return H1("Member not found")
-    
-    items, total_price = member.view_basket()  # ดึงข้อมูลตะกร้าสินค้า
-    
-    return Container(
-        H1("Your Basket"),
-        Grid(
-            *[
-                Card(
-                    H3(item["name"]),
-                    P(f"Quantity: {item['quantity']}"),
-                    P(f"{item['price']} THB"),
-                    footer=Button("Edit")
-                )
-                for item in items
-            ]
-        ),
-        Div(
-            H3(f"Total Price: {total_price} THB"),
-            Button("Checkout", style="background-color: green; color: white; padding: 10px 20px; border: none;")
-        ),
-        Button("Back", onclick="window.location='/'", style="margin-top: 10px;")
-    )
-
-serve()
