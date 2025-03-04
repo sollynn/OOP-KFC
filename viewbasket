@@ -1,9 +1,12 @@
+from fasthtml.common import *
+app, rt = fast_app()
 class System:
     def __init__(self):
         self.__branch = []
         self.__stock = []
         self.__promotion = []
         self.__member_list = []
+        self.__list_stock = []
 
     def search_member(self, ID):
         for member in self.__member_list:
@@ -51,6 +54,7 @@ class PickedItem:
         self.__quantity = quantity
 
     def get_item_info(self):
+        
         return {
             "name": self.__product["name"],
             "price": self.__product["price"],
@@ -63,7 +67,11 @@ class Basket:
         self.__items = []
 
     def add_basket_item(self, item: PickedItem):
-        self.__items.append(item)
+        if isinstance(item, PickedItem):
+            self.__items.append(item)
+            return "Done"
+        else:
+            return "Error"
 
     def remove_basket_item(self, item_name):
         self.__items = [item for item in self.__items if item.get_item_info()["name"] != item_name]
@@ -101,14 +109,49 @@ class Member:
 
     def order_history(self):
         return self.__order_history
+    def get_id(self):
+        return self.__username
 
 
-# ระบบหลัก
+
 system = System()
 
-# สร้างสมาชิกตัวอย่างและเพิ่มสินค้าเข้าไปในตะกร้า
 test_member = system.create_member("user1", "pass123")
+
 test_member._Member__current_basket.add_basket_item(PickedItem({"name": "ไก่ทอด", "price": 20}, 2))
 test_member._Member__current_basket.add_basket_item(PickedItem({"name": "นักเก็ต", "price": 30}, 1))
 
+@rt("/basket")
+def view_basket():
+    member = system.search_member("user1")
+    if not member:
+        return H1("Member not found")
 
+    items, total_price = member.view_basket()
+
+    
+
+    if not items:  
+        return H1("basket  empty")
+
+    return Container(
+        H1("Your Basket"),
+        Grid(
+            *[
+                Card(
+                    H3(item["name"]),
+                    P(f"Quantity: {item['quantity']}"),
+                    P(f"{item['price']} THB"),
+                    Button("Edit", onclick="window.location='/add_basket/{id}'", style="background-color: blue; color: white; padding: 10px 20px; border: none;"),
+                )
+                for item in items
+            ]
+        ),
+        Div(
+            H3(f"Total Price: {total_price} THB"),
+            Button("Checkout", onclick="window.location= '/payment'", style="background-color: green; color: white; padding: 10px 20px; border: none;")
+        ),
+
+    )
+if __name__ == "__main__":
+    serve()
