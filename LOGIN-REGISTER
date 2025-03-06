@@ -1,0 +1,159 @@
+from fasthtml.common import *
+from typing import List
+
+app, rt = fast_app()
+
+class System:
+    def __init__(self):
+        self.__member_list = []
+
+    def add_member_list(self,account):
+        self.__member_list.append(account)
+
+    def create_account(self,name : str ,surname : str ,tel_number : str ,email : str ,username : str ,password : str):
+        new_account = Member(name,surname,tel_number,email,username,password)
+
+        self.add_member_list(new_account)
+        return "CREATE ACCOUNT SUCCESS"
+
+    def get_member_list(self):
+        return self.__member_list
+    
+    def find_member_by_username(self,username):
+        for member in self.__member_list:
+            if username == member.get_username():
+                return member
+        return "ERROR"
+    
+    def login(self,username,password):
+        member_instance = self.find_member_by_username(username)
+        if member_instance == "ERROR":
+            return "FAIL"
+        login_success = member_instance.verify(password)
+
+        if login_success == "LOGIN SUCCESS":
+            return "LOGIN SUCCESS"
+        else:
+            return "FAIL"
+
+
+class Account:
+    def __init__(self,name,surname,tel_number,email):
+        self.__name = name
+        self.__surname = surname
+        self.__tel_number = tel_number
+        self.__email = email
+    
+    def get_account_name(self):
+        return self.__name
+    
+    def get_account_surname(self):
+        return self.__surname
+    
+    def get_email(self):
+        return self.__email
+
+class Member(Account):
+    def __init__(self, name, surname, tel_number, email,username,password):
+        super().__init__(name, surname, tel_number, email)
+        self.__username = username
+        self.__password = password
+
+    def get_username(self):
+        return self.__username
+    
+    def change_password(self, old_password, new_password):
+        if old_password == self.__password:
+            self.__password = new_password
+            return "Password changed successfully!"
+        else:
+            return "Old password is incorrect."
+
+    def verify(self, password):
+        if self.__password == password:
+            return "LOGIN SUCCESS"
+        else:
+            return "LOGIN FAIL"
+
+system = System()
+@rt("/")
+def get():
+    return Main(
+    H1("PLESE LOGIN OR REGISTER"),
+    A(Button("LOGIN"), href="/login"),
+    A(Button("Register"), href="/Register")
+    )
+    
+@rt("/login")
+def get():
+    return Container(
+        H1("LOGIN"),
+        Form( Label("Username:", Input(type="text", id="username", placeholder="Enter your username", required=True)),
+            Label("Password:", Input(type="password", id="password", placeholder="Enter your password", required=True)),
+            Button("Submit",type="submit"),
+            
+            method = "post",
+            action = "/login/submit"
+            )
+    )
+
+@rt("/Register")
+def get():
+    return Container(
+        H1("Create Account"),
+        Form(
+            Label("Name:", Input(type="text", id="name", placeholder="Enter your name", required=True)),
+            Label("Surname:", Input(type="text", id="surname", placeholder="Enter your surname", required=True)),
+            Label("Phone Number:", Input(type="text", id="tel_number", placeholder="Enter your phone number", required=True)),
+            Label("Email:", Input(type="email", id="email", placeholder="Enter your email", required=True)),
+            Label("Username:", Input(type="text", id="username", placeholder="Enter your username", required=True)),
+            Label("Password:", Input(type="password", id="password", placeholder="Enter your password", required=True)),
+            Button("Submit", type="submit"),
+
+            
+            method = "post",
+            action="/register/submit"
+        )
+    )
+@rt("/login/submit")
+def post(username: str, password: str):
+    
+    result = system.login(username, password)
+    
+    if result == "LOGIN SUCCESS":
+        return Redirect("/account") 
+    else:
+        return "Login Failed. Try again"
+
+@rt("/register/submit")
+def post(name: str, surname: str, tel_number: str, email: str, username: str, password: str):
+    
+    result = system.create_account(name, surname, tel_number, email, username, password)
+
+    if result == "CREATE ACCOUNT SUCCESS":
+        return Redirect("/account") 
+    else:
+        return "Register Failed. Try again"
+    
+
+@rt("/account")
+def get(): 
+    grid_content = []
+    unique_accounts = set()  # ใช้เซ็ตเพื่อลบค่าซ้ำ
+
+    for account in system.get_member_list():
+        account_tuple = (account.get_account_name(), account.get_account_surname(), account.get_email())
+
+        if account_tuple not in unique_accounts:
+            unique_accounts.add(account_tuple)
+            grid_content.append(
+                Card(
+                    P(account_tuple[0]),
+                    P(account_tuple[1]),
+                    P(account_tuple[2])
+                )
+            )
+
+    return Container(Grid(*grid_content))
+
+serve()
