@@ -36,6 +36,22 @@ class System:
         else:
             return "FAIL"
 
+    def handle_authentication(self, action, name=None, surname=None, tel_number=None, email=None, username=None, password=None):
+        if action == "register":
+            result = self.create_account(name, surname, tel_number, email, username, password)
+        else:  # action == "login"
+            result = self.login(username, password)
+
+        member_instance = self.find_member_by_username(username)
+
+        if isinstance(member_instance, Member):
+            session.login(member_instance)
+
+        if result in ["CREATE ACCOUNT SUCCESS", "LOGIN SUCCESS"]:
+            return Redirect("/account")
+        else:
+            return f"{action.capitalize()} Failed. Try again"
+    
 
 class Account:
     def __init__(self,name,surname,tel_number,email):
@@ -74,7 +90,21 @@ class Member(Account):
             return "LOGIN SUCCESS"
         else:
             return "LOGIN FAIL"
+        
+class SessionManager:
+    def __init__(self):
+        self.current_user = None 
+    
+    def login(self, username):
+        self.current_user = username  
 
+    def logout(self):
+        self.current_user = None 
+
+    def get_current_user(self):
+        return self.current_user
+
+session = SessionManager()
 system = System()
 @rt("/")
 def get():
@@ -117,24 +147,12 @@ def get():
     )
 @rt("/login/submit")
 def post(username: str, password: str):
-    
-    result = system.login(username, password)
-    
-    if result == "LOGIN SUCCESS":
-        return Redirect("/account") 
-    else:
-        return "Login Failed. Try again"
+    return system.handle_authentication("login", username=username, password=password)
 
 @rt("/register/submit")
 def post(name: str, surname: str, tel_number: str, email: str, username: str, password: str):
-    
-    result = system.create_account(name, surname, tel_number, email, username, password)
+    return system.handle_authentication("register", name, surname, tel_number, email, username, password)
 
-    if result == "CREATE ACCOUNT SUCCESS":
-        return Redirect("/account") 
-    else:
-        return "Register Failed. Try again"
-    
 
 @rt("/account")
 def get(): 
