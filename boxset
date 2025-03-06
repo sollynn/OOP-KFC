@@ -1,7 +1,16 @@
-from fasthtml.common import *
+from fasthtml.common import*
 from typing import List
 
+
 app, rt = fast_app()
+import random
+
+# ฟังก์ชันสำหรับสุ่มสีแบบ Hex
+def random_color():
+    r = random.randint(180, 255)
+    g = random.randint(180, 255)
+    b = random.randint(180, 255)
+    return f"rgb({r}, {g}, {b})"  # ใช้ RGB ที่สุ่มในช่วงที่เป็นสีอ่อน
 
 class System:
     def __init__(self):
@@ -32,9 +41,9 @@ class System:
             if boxset.get_boxset_id() == boxset_id:
                 return boxset
 
-    def add_boxselect(self, food_type: str, menu_list: List[str], boxset_id: str):
+    def add_boxselect(self, food_type: str, menu_list: List[str], boxset_id: str , max_total : int):
         menu_instance = self.find_menu_by_menu_id(menu_list)
-        boxselect = BoxSelect(food_type, menu_instance)
+        boxselect = BoxSelect(food_type, menu_instance , max_total)
         boxset_instance = self.search_boxset_by_id(boxset_id)
         if boxset_instance:
             boxset_instance.add_box_select(boxselect)
@@ -42,32 +51,41 @@ class System:
     def get_boxset_list(self):
         return self.__boxset_list
 
-    def choose_menu(self, boxset_id: str, select_dict: dict):
+    def choose_menu(self, boxset_id: str, select_list: list):
         boxset_instance = self.search_boxset_by_id(boxset_id)
-        boxselect_list = boxset_instance.get_box_select_list()
-
+        
         new_boxset_instance = Boxset(boxset_instance.get_boxset_name(),boxset_instance.get_boxset_id(),boxset_instance.get_fixed_menu(),boxset_instance.get_price())
-        for select_list in boxselect_list:
-            new_boxset_instance.add_box_select(select_list)
-
+        new_boxset_instance.add_selected_menu(select_list)
         
-        for food_type, menu_selected in select_dict.items():
-            for boxselect in boxselect_list:
-                if (boxselect.get_menu_type() == food_type) and (menu_selected in boxselect.get_select_option_id()):
-                    new_boxset_instance.add_selected_menu(self.serch_food_instance_by_id(menu_selected))
         
-        selected_menu = [menu.get_food_name() for menu in new_boxset_instance.get_fixed_menu()]
-
-        for select in new_boxset_instance.get_selected_menu():
-            selected_menu.append(select.get_food_name())
-            
-        return selected_menu
-
+        member.get_current_basket().add_food_in_basket(new_boxset_instance)    
+        
+        
     def serch_food_instance_by_id(self,food_id):
         for menu in self.__menu_list:
             if menu.get_food_id() == food_id:
                 return menu
 
+class Member:
+    def __init__(self,id):
+        self.__member_id = id
+        self.__current_basket = None
+
+    def add_basket(self,basket):
+        self.__current_basket = basket
+    
+    def get_current_basket(self):
+        return self.__current_basket
+    
+class Basket:
+    def __init__(self):
+        self.__basket_list = []
+
+    def add_food_in_basket(self,food):
+        self.__basket_list.append(food)
+
+    def get_basket_list(self):
+        return self.__basket_list
 
 class Food:
     def __init__(self, food_name: str, food_id: str, price: int):
@@ -124,17 +142,19 @@ class Boxset:
     def get_price(self):
         return self.__price
     
-    def add_selected_menu(self,selected_menu):
-        self.__selected_menu.append(selected_menu)
+    def add_selected_menu(self,selected_menu : list):
+        for menu in selected_menu:
+            self.__selected_menu.append(menu)
 
     def get_selected_menu(self):
         return self.__selected_menu
     
 
 class BoxSelect:
-    def __init__(self, menu_type: str, select_option: List[Food]):
+    def __init__(self, menu_type: str, select_option: List[Food] , total : int):
         self.__menu_type = menu_type
         self.__select_option = select_option
+        self.__max_total = total
         
 
     def select_good_in_set(self, selected: Food):
@@ -147,14 +167,31 @@ class BoxSelect:
     def get_select_option(self):
         return self.__select_option
 
+    def get_max_total(self):
+        return self.__max_total
     
     def get_select_option_id(self):
         return [id.get_food_id() for id in self.__select_option]
 
     
+class BoxsetBasket:
+    def __init__(self,member,boxselect,menu):
+        self.__member_instance = member
+        self.__boxslect = boxselect
+        self.__menu = menu
+        self.__total = 0
 
+    def add_amount(self):
+        self.__total += 1
+
+    def remove_amount(self):
+        if self.__total > 0:
+            self.__total -= 1
 
 system = System()
+member = Member("0001")
+member.add_basket(Basket())
+
 system.add_stock_list("Fried Chicken", "67010000", 100, 10)
 system.add_stock_list("Spicy Chicken", "67010001", 30, 10)
 system.add_stock_list("Lemonade Chicken", "67010002", 50, 10)
@@ -165,12 +202,148 @@ system.add_stock_list("Soda", "68010002", 45, 10)
 
 system.add_boxset_list("ชุดสุดคุ้ม1", "1001", ["67010000", "68010001"], 50)
 system.add_boxset_list("ชุดสุดคุ้ม2", "1002", ["67010001", "67010002"], 100)
+system.add_boxset_list("ชุดสุดคุ้ม3", "1003", ["67010000", "68010001"], 50)
+system.add_boxset_list("ชุดสุดคุ้ม4", "1004", ["67010001", "67010002"], 100)
+system.add_boxset_list("ชุดสุดคุ้ม5", "1005", ["67010000", "68010001"], 50)
+system.add_boxset_list("ชุดสุดคุ้ม6", "1006", ["67010001", "67010002"], 100)
 
-system.add_boxselect("Chicken", ["67010000", "67010001"], "1001")
-system.add_boxselect("Fresh Water", ["68010000", "68010002"], "1001")
+system.add_boxselect("Chicken", ["67010000", "67010001","67010003"], "1001",2)
+system.add_boxselect("Fresh Water", ["68010000", "68010002"], "1001",2)
+
+system.add_boxselect("Chicken", ["67010000", "67010001"], "1002",2)
+system.add_boxselect("Fresh Water", ["68010000", "68010002"], "1002",3)
 
 
-select_menu = system.choose_menu("1001", {"Chicken": "67010000", "Fresh Water": "68010002"})
 
-print(f"Your Boxset Menu: {select_menu}")
+import random
+
+# Function to generate random colors (just a sample implementation)
+def random_color():
+    r = random.randint(180, 255)
+    g = random.randint(180, 255)
+    b = random.randint(180, 255)
+    return f"rgb({r}, {g}, {b})"  # ใช้ RGB ที่สุ่มในช่วงที่เป็นสีอ่อน
+
+
+@rt("/boxset/{boxset_id}")
+def boxset_detail(boxset_id: str):
+    boxset = system.search_boxset_by_id(boxset_id)
+    if not boxset:
+        return P("Boxset not found.")
+    
+    # สร้างรายละเอียดของ Boxset
+    boxset_name = boxset.get_boxset_name()
+    boxset_price = boxset.get_price()
+    menu_names = [food.get_food_name() for food in boxset.get_fixed_menu()]
+
+    # ใช้ random_color() เพื่อสุ่มสี
+    background_color = random_color()
+
+    # สร้าง Container
+    container_content = [
+        H1(f"{boxset_name}"),
+        Card(
+            H3("Main menu", style=f"background-color: {background_color};"),
+            *[P(menu) for menu in menu_names],
+            style=f"""
+            width: 100%;
+            min-height: 200px;
+            padding: 20px;
+            margin: 10px;
+            background-color: {background_color};
+            """
+        )
+    ]
+    
+    container_content.append(H3("Select Menu"))
+
+    # เริ่มสร้างฟอร์ม
+    form_content = []
+    for selected in boxset.get_box_select_list():
+        # สร้างรายการ dropdown สำหรับแต่ละหมวดหมู่
+        grid_content = [
+            Grid(H3(f"{selected.get_menu_type()}", style=f"background-color: {background_color};"))
+        ]  
+        options = [
+            Option(food_name.get_food_name()) for food_name in selected.get_select_option()
+        ]
+        
+        # เพิ่ม Select dropdown ไปในฟอร์ม
+        grid_content.append(
+            Card(
+                Select(*options, name=f"select_{selected.get_menu_type()}"),  # ใช้ name เพื่อเก็บค่าที่เลือก
+                style="display: flex; justify-content: space-between; margin-bottom: 10px;"  
+            )
+        )
+        form_content.extend(grid_content)
+    
+    # เพิ่มปุ่ม submit
+    form_content.append(
+         A(Button("Select"), href=f"/submit/{boxset.get_boxset_id()}"),
+    )
+
+    # สร้าง form สำหรับส่งข้อมูล
+    form = Form(*form_content, method="post", action=f"/submit/{boxset.get_boxset_id()}")
+
+
+    container_content.append(form)
+
+    # เพิ่มปุ่ม "Go Back"
+    container_content.append(A(Button("GO Back"), href="/"))
+    
+    return Container(*container_content)
+
+
+@rt("/submit/{boxset_id}", methods=["POST"], )
+def post(boxset_id : str, select_menu: dict):
+    
+    selected_foods = [select_menu[key] for key in select_menu]
+
+    system.choose_menu(boxset_id,selected_foods)
+    return f"Selected food list: {selected_foods}"
+
+@rt("/")
+def get():
+    menu = system.get_boxset_list()
+    
+    # สร้าง Grid ของ Boxset แต่ละอัน
+    grid_content = []
+    for boxset in menu:
+        # ดึงชื่อ Boxset และราคา
+        boxset_name = boxset.get_boxset_name()
+        boxset_price = boxset.get_price()
+
+        # ดึงชื่อของเมนูที่อยู่ใน Boxset
+        menu_names = [food.get_food_name() for food in boxset.get_fixed_menu()]
+
+        # สร้าง Grid card สำหรับแสดง Boxset
+        grid_content.append(
+            Card(
+                H3(boxset_name),
+                P(f"Price: {boxset_price}"),
+                P(f"Main menu: {', '.join(menu_names)}"),
+                A(Button("Select"), href=f"/boxset/{boxset.get_boxset_id()}"),
+                style=f"background-color: {random_color()};",
+            )
+        )
+    # แสดง Grid ของ Boxset ทั้งหมด
+    return Container(
+        H1("BOXSET"),
+        Grid(*grid_content)  # ใช้ *grid_content เพื่อแสดงแต่ละ Card
+    )
+
+@rt("/basket")
+def get():     
+    menu_in_basket = member.get_current_basket().get_basket_list()
+    grid_content = []
+    for menu in menu_in_basket:
+        grid_content.append(
+            Card(
+                P(menu.get_boxset_id())  # เรียกฟังก์ชัน get_box_set_id() ด้วยวงเล็บ
+            )
+        )
+    return grid_content
+
+serve()
+
 
