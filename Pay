@@ -1,0 +1,170 @@
+from fasthtml.common import*
+
+app, rt = fast_app()
+    
+class Food:
+    def __init__(self, name):
+        self.__name = name
+
+    @property
+    def get_name(self):
+        return self.__name
+
+class Member:
+    def __init__(self, account_id : str, basket : 'Basket'):
+        self.__account_id = account_id
+        self.__basket = basket
+
+    @property
+    def get_id(self):
+        return self.__account_id
+    
+    @property
+    def clear_stock(self):
+        self.__basket.clear_stock
+        return 'Done'
+
+class Basket:
+    def __init__(self):
+        self.__list_picking_basket = []
+
+    ####### ของจริง method นี้ไม่มี ##################################
+    def add_picking_basket(self, picking_basket):
+        return self.__list_picking_basket.append(picking_basket)
+    ############################################################################
+
+    @property
+    def clear_stock(self):
+        for items in self.__list_picking_basket:
+            system.get_stock_by_food_name(items.get_food.get_name).remove_stock(items.get_amount)
+        return 'Done'
+
+class PickingBasket:
+    def __init__(self, food : Food, amount : int):
+        self.__food = food
+        self.__amount = amount
+
+    @property
+    def get_food(self):
+        return self.__food
+    
+    @property
+    def get_amount(self):
+        return self.__amount
+
+class Stock:
+    def __init__(self, food : Food, amount : int):
+        self.__food = food
+        self.__amount = amount
+
+    @property
+    def get_food(self):
+        return self.__food
+    
+    def remove_stock(self, amount : int):
+        if(isinstance(amount,int) and amount > 0):
+            self.__amount = self.__amount - amount
+            return 'Done'
+        else:
+            return 'Error'
+
+class System:
+    def __init__(self):
+        self.__list_member = []
+        self.__list_stock = []
+
+    def create_member(self, member : 'Member'):
+        return self.__list_member.append(member)
+    
+    def add_stock(self, stock : 'Stock'):
+        return self.__list_stock.append(stock)
+    
+    def search_member_by_id(self, account_id):
+        for member in self.__list_member:
+            if(member.get_id == account_id):
+                return member
+    
+    def get_stock_by_food_name(self, name):
+        for stock in self.__list_stock:
+            if(stock.get_food.get_name == name):
+                return stock
+
+    def clear_stock(self, member : 'Member'):
+        member.clear_stock
+        return 'Done'
+
+# สร้าง instance ของ System
+system = System()
+
+# สร้าง instance ของ Basket สำหรับสมาชิก
+basket1 = Basket()
+
+# สร้าง instance ของ Member
+member1 = Member(account_id='1', basket=basket1)
+
+# สร้าง instance ของ Food
+food1 = Food(name="Apple")
+food2 = Food(name="Banana")
+
+# สร้าง instance ของ Stock
+stock1 = Stock(food=food1, amount=50)
+stock2 = Stock(food=food2, amount=30)
+
+# สร้าง instance ของ PickingBasket
+picking1 = PickingBasket(food=food1, amount=5)
+picking2 = PickingBasket(food=food2, amount=3)
+
+# เพิ่มสินค้าในตะกร้าของสมาชิก
+######## ของจริงใช้ AddBasket ########################################
+basket1.add_picking_basket(picking1)
+basket1.add_picking_basket(picking2)
+##############################################################
+
+# เพิ่มสมาชิกและสต็อกลงใน system
+system.create_member(member1)
+system.add_stock(stock1)
+system.add_stock(stock2)
+
+@rt('/')
+def get():
+    return Container(
+        H1('วิธีการชำระเงิน'),
+        Grid(
+            Card(
+                A(Button('ชำระด้วย QR Code'),href = '/QR')
+            ),
+            Card(
+                A(Button('ชำระด้วยการโอนผ่านเลขบัญชี'),href='/account_num')
+            )
+        )
+    )
+
+@rt('/QR')
+def get():
+    return Container(
+        Img(src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/330px-QR_code_for_mobile_English_Wikipedia.svg.png', style ='background-color: white;'),
+        P('สแกนเพื่อชำระเงิน', style ='font-size: 50px'),
+        Button('ชำระเงินเสร็จสิ้น',hx_post=f'/total/order/{member1.get_id}'),
+        style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center;"
+    )
+
+@rt('/account_num')
+def get():
+    return Container(
+        P('XXX-X-XXXXX-X',style ='font-size: 150px'),
+        Button('ชำระเงินเสร็จสิ้น',hx_post=f'/total/order/{member1.get_id}'),
+        style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center;"
+    )
+
+@rt('/total/order/{member_id}')
+def post(member_id: str):
+    system.clear_stock(system.search_member_by_id(member_id))
+    return Redirect('/summary')
+
+@rt('/summary')
+def get():
+    return Container(
+        H1('สรุปละคับ')
+    )
+
+serve()
