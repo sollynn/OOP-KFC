@@ -1,0 +1,536 @@
+from fasthtml.common import *
+from typing import List, Tuple, Optional
+from datetime import datetime, time, timedelta
+
+
+app, rt = fast_app()
+class Ordertype:
+    def __init__(self,):
+        pass
+
+class Delivery:
+    def __init__(self):
+        self.__address = None
+
+    def get_address(self):
+        return self.__address
+    
+    def set_address(self, address_info: str):
+        self.__address = address_info
+        
+class PickUp:
+    def __init__(self):
+        self.__selected_branch = None
+
+    def get_selected_branch(self):
+        return self.__selected_branch
+
+    def set_branch(self, branch_info):
+        self.__selected_branch = branch_info
+    
+class Branch:
+    def __init__(self, postcode, district, address):
+        self.__postcode = postcode
+        self.__district = district
+        self.__address = address
+
+    def get_branch_info(self):
+        return {
+            "postcode": self.__postcode,  
+            "district": self.__district,  
+            "address": self.__address
+        }
+
+class System:
+    def __init__(self):
+        self.__branches = []
+
+    def add_branch(self, branch: Branch):
+        self.__branches.append(branch)
+
+    def find_branch_from_post(self, post_number: str):
+        try:
+            post_number = int(post_number)
+        except ValueError:
+            return [] 
+
+        matched_branches = [branch.get_branch_info() for branch in self.__branches if branch.get_branch_info()['postcode'] == post_number]
+        return matched_branches
+
+
+system = System()
+delivery = Delivery()
+branches = [
+    Branch(10200, "พระนคร", "Bangkok, Thailand"),
+    Branch(10300, "ดุสิต", "Bangkok, Thailand"),
+    Branch(10530, "หนองจอก", "Bangkok, Thailand"),
+    Branch(10500, "บางรัก", "Bangkok, Thailand"),
+    Branch(10220, "บางเขน", "Bangkok, Thailand"),
+    Branch(10240, "บางกะปิ", "Bangkok, Thailand"),
+    Branch(10330, "ปทุมวัน", "Bangkok, Thailand"),
+    Branch(10100, "ป้อมปราบศัตรูพ่าย", "Bangkok, Thailand"),
+    Branch(10260, "พระโขนง", "Bangkok, Thailand"),
+    Branch(10510, "มีนบุรี", "Bangkok, Thailand"),
+    Branch(10520, "ลาดกระบัง", "Bangkok, Thailand"),
+    Branch(10120, "ยานนาวา", "Bangkok, Thailand"),
+    Branch(10100, "สัมพันธวงศ์", "Bangkok, Thailand"),
+    Branch(10400, "พญาไท", "Bangkok, Thailand"),
+    Branch(10600, "ธนบุรี", "Bangkok, Thailand"),
+    Branch(10600, "บางกอกใหญ่", "Bangkok, Thailand"),
+    Branch(10310, "ห้วยขวาง", "Bangkok, Thailand"),
+    Branch(10600, "คลองสาน", "Bangkok, Thailand"),
+    Branch(10170, "ตลิ่งชัน", "Bangkok, Thailand"),
+    Branch(10700, "บางกอกน้อย", "Bangkok, Thailand"),
+    Branch(10150, "บางขุนเทียน", "Bangkok, Thailand"),
+    Branch(10160, "ภาษีเจริญ", "Bangkok, Thailand"),
+    Branch(10160, "หนองแขม", "Bangkok, Thailand"),
+    Branch(10140, "ราษฎร์บูรณะ", "Bangkok, Thailand"),
+    Branch(10700, "บางพลัด", "Bangkok, Thailand"),
+    Branch(10400, "ดินแดง", "Bangkok, Thailand"),
+    Branch(10240, "บึงกุ่ม", "Bangkok, Thailand"),
+    Branch(10120, "สาทร", "Bangkok, Thailand"),
+    Branch(10800, "บางซื่อ", "Bangkok, Thailand"),
+    Branch(10900, "จตุจักร", "Bangkok, Thailand"),
+    Branch(10120, "บางคอแหลม", "Bangkok, Thailand"),
+    Branch(10250, "ประเวศ", "Bangkok, Thailand"),
+    Branch(10110, "คลองเตย", "Bangkok, Thailand"),
+    Branch(10250, "สวนหลวง", "Bangkok, Thailand"),
+    Branch(10150, "จอมทอง", "Bangkok, Thailand"),
+    Branch(10210, "ดอนเมือง", "Bangkok, Thailand"),
+    Branch(10400, "ราชเทวี", "Bangkok, Thailand"),
+    Branch(10230, "ลาดพร้าว", "Bangkok, Thailand"),
+    Branch(10110, "วัฒนา", "Bangkok, Thailand"),
+    Branch(10240, "สะพานสูง", "Bangkok, Thailand"),
+    Branch(10100, "สัมพันธวงศ์", "Bangkok, Thailand"),
+    Branch(10120, "สาทร", "Bangkok, Thailand"),
+    Branch(10220, "สายไหม", "Bangkok, Thailand"),
+    Branch(10230, "คันนายาว", "Bangkok, Thailand"),
+    Branch(10240, "สะพานสูง", "Bangkok, Thailand"),
+    Branch(10310, "วังทองหลาง", "Bangkok, Thailand"),
+    Branch(10510, "คลองสามวา", "Bangkok, Thailand"),
+    Branch(10260, "บางนา", "Bangkok, Thailand"),
+    Branch(10170, "ทวีวัฒนา", "Bangkok, Thailand"),
+    Branch(10140, "ทุ่งครุ", "Bangkok, Thailand"),
+    Branch(10150, "บางบอน", "Bangkok, Thailand")
+]
+
+for branch in branches:
+    system.add_branch(branch)
+
+
+def search_branches(postcode: str):
+    branch_list = system.find_branch_from_post(postcode)
+    if branch_list:
+        return Div(
+            *[
+                Div(
+                    Div(
+                        H3(f"Branch: {branch['district']}", cls="branch-title"),
+                        P(f"Address: {branch['address']}", cls="branch-address"),
+                        Button("Select",
+                               hx_post="/select_branch",
+                               hx_vals={"district": branch["district"], "address": branch["address"]},
+                               hx_target="#selected_branch",
+                               cls="select-button"
+                        )
+                    ),
+                    cls="branch-card"
+                )
+                for branch in branch_list
+            ]
+        )
+    else:
+        return B("No branch found for this postcode.", cls="no-branch")
+    
+@rt('/')
+def order_type():
+    return Div(
+        H1("Choose Your Order Type", cls="title"),
+        Style("""
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+
+            html, body {
+                background: linear-gradient(to bottom, #ffffff, #ff7575);
+                min-height: 100vh;
+                margin: 0;
+                padding: 0;
+                font-family: 'Roboto', sans-serif;
+                display: flex;  
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .title {
+                font-size: 36px;
+                font-weight: 700;
+                color: #333;
+                margin-top: -250px;
+                margin-bottom: 20px;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+                font-family: 'Playfair Display', serif;  /* ใช้ Playfair Display สำหรับข้อความ */
+            }
+
+            .order-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+                margin-top: 30px;
+            }
+
+            .order-button1 {
+                width: 220px;
+                height: 55px;
+                font-size: 20px;
+                font-weight: bold;
+                text-align: center;
+                border: none;
+                background: linear-gradient(135deg, #ff758c, #ff7eb3);
+                color: white;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+                transition: all 0.4s ease-in-out;
+                margin-top: 50px;
+            }
+              
+            .order-button2 {
+                width: 220px;
+                height: 55px;
+                font-size: 20px;
+                font-weight: bold;
+                text-align: center;
+                border: none;
+                background: linear-gradient(135deg, #ff758c, #ff7eb3);
+                color: white;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+                transition: all 0.4s ease-in-out;
+                margin-top: 20px;
+            }
+
+            .order-button1:hover {
+                background: linear-gradient(135deg, #ff4b6a, #ff6b9b);
+                transform: translateY(-3px);
+                box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+            }
+            .order-button2:hover {
+                background: linear-gradient(135deg, #ff4b6a, #ff6b9b);
+                transform: translateY(-3px);
+                box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+            }
+        """),
+        Div(
+            Button("🚚 Pick Up", onclick="window.location.href='/pickup';", cls="order-button1"),
+            Button("🏡 Delivery", onclick="window.location.href='/delivery';", cls="order-button2"),
+            cls="order-container"
+        )
+    )
+
+
+
+@rt('/pickup')
+def get():
+    return Titled("Search Branch by Postcode",
+    Style("""
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+
+            html, body {
+                background: linear-gradient(to bottom, #ffffff, #ff7575);
+                min-height: 100vh;
+                margin: 0;
+                padding: 0;
+                font-family: 'Roboto', sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+            #results {
+                max-height: 178px;
+                overflow-y: auto;
+                width: 100%;
+                text-align: center;
+                margin-top: 10px;
+            }
+
+            h1 {
+                font-size: 36px;
+                font-weight: 700;
+                color: #333;
+                margin-top: -100px;
+                margin-bottom: 20px;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+                font-family: 'Playfair Display', serif; 
+            }
+          
+            h3 {
+                font-size: 36px;
+                font-weight: 700;
+                color: #333;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+                font-family: 'Playfair Display', serif; 
+            }
+          
+            .no-branch{
+                font-size: 14px;
+                color: #333;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+                font-family: 'Playfair Display', serif; 
+            }
+            .search-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+                margin-top: 30px;
+            }
+
+            .input-postcode {
+                width: 400px !important;
+                height: 50px !important;
+                font-size: 18px !important;
+                padding: 10px !important;
+                border-radius: 10px !important;
+                border: 1px solid #ddd !important;
+                background-color: #ffd4d4 !important;
+                color: #333 !important;
+                margin-top: 20px !important;
+            }
+            .input-postcode::placeholder {
+                color: #333 !important;
+            }
+
+            .input-postcode:focus {
+                background-color: #ffd1d1 !important;
+                border: 1px solid #ff7eb3 !important;
+            }
+
+            .search-button {
+                width: 220px;
+                height: 55px;
+                font-size: 20px;
+                font-weight: bold;
+                text-align: center;
+                border: none;
+                background: linear-gradient(135deg, #ff758c, #ff7eb3);
+                color: white;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+                transition: all 0.4s ease-in-out;
+            }
+            .branch-title {
+                font-size: 22px; /* ขนาดตัวอักษรใหญ่ขึ้นเล็กน้อย */
+                font-weight: bold; /* ทำให้ชื่อสาขาดูเด่น */
+                color: #333; /* ใช้โทนสีแดงอ่อนให้เข้ากับธีม */
+                text-align: center; /* จัดให้อยู่กึ่งกลาง */
+                margin-bottom: 10px; /* เพิ่มระยะห่างด้านล่าง */
+                font-family: 'Playfair Display', serif;
+            }
+
+            .branch-address {
+                font-size: 16px; /* ขนาดพอดีสำหรับที่อยู่ */
+                color: #333; /* ใช้สีเทาเข้มให้อ่านง่าย */
+                text-align: center; /* จัดกึ่งกลาง */
+                line-height: 1.5; /* เพิ่มระยะห่างระหว่างบรรทัด */
+                font-family: 'Roboto', sans-serif; /* ใช้ฟอนต์ Roboto เพื่อความอ่านง่าย */
+            }
+          
+            .search-button:hover {
+                background: linear-gradient(135deg, #ff4b6a, #ff6b9b);
+                transform: translateY(-3px);
+                box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+            }
+
+            .done-button {
+                width: 220px;
+                height: 55px;
+                font-size: 20px;
+                font-weight: bold;
+                text-align: center;
+                border: none;
+                background: linear-gradient(135deg, #ff758c, #ff7eb3);
+                color: white;
+                border-radius: 12px;
+                cursor: pointer;
+                box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+                transition: all 0.4s ease-in-out;
+                margin-bottom: -100px;
+            }
+          
+            .done-button:hover {
+                background: linear-gradient(135deg, #ff4b6a, #ff6b9b);
+                transform: translateY(-3px);
+                box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+                margin-top: 10px;
+            }
+
+            .branch-card {
+                background: white;
+                padding: 20px;
+                margin: 15px auto;
+                width: 90%;
+                max-width: 500px;
+                border-radius: 12px;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+                border-left: 5px solid #ff758c;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+
+            .branch-card:hover {
+                transform: translateY(-5px); /* ยกขึ้นเล็กน้อยเมื่อโฮเวอร์ */
+                box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2); /* เงาเข้มขึ้น */
+            }
+            .no-branch-card{
+                color: #333;
+                margin: 10px;
+                margin-top: 40px;
+                margin-bottom: 40px;
+                font-family: 'Playfair Display', serif; 
+            }
+            .select-button {
+                background: linear-gradient(135deg, #ff758c, #ff7eb3);
+                color: white;
+                border-radius: 10px;
+                padding: 10px 20px;
+                border: none;
+                cursor: pointer;
+                transition: background 0.3s;
+            }
+
+            .select-button:hover {
+                background: linear-gradient(135deg, #ff4b6a, #ff6b9b);
+            }
+        """),
+        Form(Input(id="postcode", placeholder="Enter postcode...", name="postcode", cls="input-postcode"), 
+             hx_get="/search", target_id="results", hx_trigger="keyup delay:200ms"),
+        Div(id="results"),
+        H3("Selected Branch :"),
+        Div(B("No branch selected."), id="selected_branch", 
+            cls = "no-branch-card"),
+        Button("Done", onclick="window.location.href='/';", cls="done-button"),
+    )
+
+
+
+@rt('/delivery')
+def delivery_page():
+    return Titled("Enter Your Delivery Address",
+        Style("""
+                @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+            html, body {
+                background: linear-gradient(to bottom, #ffffff, #ff7575);
+                min-height: 100vh;
+                margin: 0;
+                padding: 0;
+                font-family: 'Roboto', sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+              
+            h1 {
+                font-size: 36px;
+                font-weight: 700;
+                color: #333;    
+                margin-top: -200px;
+                margin-bottom: 20px;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+                font-family: 'Playfair Display', serif; 
+            }
+                
+            .delivery-input {
+                width: 400px !important;
+                height: 50px !important;
+                font-size: 18px !important;
+                padding: 10px !important;
+                border-radius: 10px !important;
+                border: 1px solid #ddd !important;
+                background-color: #f8d1c4 !important; /* สีเข้มขึ้น */
+                color: #333 !important;
+                margin-top: 20px !important;
+            }
+
+            .delivery-input:focus {
+                background-color: #ffd1d1 !important;
+                border: 1px solid #ff7eb3 !important;
+            }
+
+            .done-button {
+                background-color: #ff7eb3 !important;
+                color: white !important;
+                font-size: 16px !important;
+                padding: 12px 24px !important;
+                border-radius: 10px !important;
+                border: none !important;
+                cursor: pointer;
+                margin-top: 20px !important;
+            }
+
+            .done-button:hover {
+                background-color: #ff5e99 !important;
+            }
+            .delivery-input::placeholder{
+                color: #333 !important;
+            }
+
+            #address_confirmation {
+                font-size: 18px;
+                color: #333;
+                margin-top: 20px;
+            }
+        """),
+        Form(
+            Input(id="delivery_address", placeholder="Enter your delivery address...", name="address", cls="delivery-input"),
+            Button("Submit", cls="done-button"),
+            method='post',
+            action="/submit_address"
+        ),
+        Div(id="address_confirmation"),
+    )
+
+
+@rt('/submit_address')
+def submit_address(address: str):
+    if not address:
+        return B("Please enter a valid address.")
+
+    delivery.set_address(address)
+    
+    print(f"Address entered: {delivery.get_address()}")
+    
+@rt('/select_delivery')
+def select_delivery():
+    return Titled("Delivery Information",
+        H3(f"Delivery Address: {delivery.get_address()}"),
+        Button("Done", onclick="window.location.href='/';", cls = "done-button"),
+    )
+
+@rt('/search')
+def search(postcode: Optional[str] = None):
+    if not postcode or not postcode.strip().isdigit():
+        return B("Please enter a valid postcode.")
+    result = search_branches(postcode.strip())
+    return Div(result)
+
+pickup = PickUp()
+
+@rt('/select_branch')
+def select_branch(district: str, address: str):
+    branch_info = {"district": district, "address": address}
+    pickup.set_branch(branch_info)
+    print(f"Branch Select : {pickup.get_selected_branch()}")
+    return B(f"Selected Branch : {district} ({address})")
+    
+
+serve()
