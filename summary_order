@@ -5,15 +5,8 @@ app, rt = fast_app()
 class Order:
     def __init__(self, order_ID, order_type, member):
         self.__order_ID = order_ID
-        self.__order_type = order_type
+        self.__order_type = order_type.lower() if order_type.lower() in ["delivery", "pickup"] else "Invalid"
         self.__member = member
-
-    def select_order_type(self, order_type):
-        if order_type.lower() in ["delivery", "pickup"]:
-            self.__order_type = order_type.lower()
-            return self.__order_type
-        else:
-            return "Invalid"
 
     def get_order_type(self):
         return self.__order_type
@@ -23,7 +16,7 @@ class System:
     def __init__(self):
         self.__branch = []
         self.__stock = []
-        self.__promotion = []
+        self.__promotion_list = []
         self.__member_list = []
 
     def search_member(self, ID):
@@ -32,47 +25,25 @@ class System:
                 return member
         return None
 
-    def view_basket(self, member):
-        return member.view_basket()
-
     def create_member(self, username, password):
         new_member = Member(username, password, [], Basket())
         self.__member_list.append(new_member)
         return new_member
 
-    def add_branch(self, branch):
-        self.__branch.append(branch)
-
-    def add_boxset(self, boxset):
-        self.__stock.append(boxset)
-
-    def login(self, username, password):
-        for member in self.__member_list:
-            if member.verify_password(password):
-                return member
+    def get_coupon(self, coupon_code):
+        for promotion in self.__promotion_list:
+            if promotion.verify_coupon(coupon_code):
+                return promotion
         return None
-
-    def edit_password(self, username, new_password):
-        for member in self.__member_list:
-            if member.get_username() == username:
-                member.edit_password(new_password)
-                return True
-        return False
 
     def summary_order(self, member_id, order: Order):
         member = self.search_member(member_id)
         if not member:
             return None
         summary = member.summary_order(order)
-        return summary
-        
-    def get_coupon(self, coupon_code):
-        for promotion in self.__promotion_list:
-            if promotion.verify_coupon(coupon_code):
-               
-                return promotion
-       
-        return None
+
+
+
 class Promotion:
     def __init__(self, coupon_code, discount):
         self.__coupon_code = coupon_code
@@ -83,6 +54,8 @@ class Promotion:
     
     def get_discount(self):
         return self.__discount
+
+
 class PickedItem:
     def __init__(self, product, quantity):
         self.__product = product
@@ -103,15 +76,9 @@ class Basket:
     def add_basket_item(self, item: PickedItem):
         self.__items.append(item)
 
-    def remove_basket_item(self, item_name):
-        self.__items = [item for item in self.__items if item.get_item_info()["name"] != item_name]
-
-    def calculate_total_price(self):
-        return sum(item.get_item_info()["price"] * item.get_item_info()["quantity"] for item in self.__items)
-
-    def item_selected(self, coupon_code=""):
+    def item_selected(self, system, coupon_code=""):
         items = [item.get_item_info() for item in self.__items]
-        total_price = self.calculate_total_price()
+        total_price = sum(item["price"] * item["quantity"] for item in items)
         discount_applied = 0
         discount_include = total_price  
 
@@ -120,7 +87,6 @@ class Basket:
             if promotion:
                 discount_applied = total_price * promotion.get_discount()
                 discount_include = total_price - discount_applied 
-
 
         return items, total_price, discount_applied, discount_include
 
@@ -131,25 +97,21 @@ class Member:
         self.__password = password
         self.__order_history = order_history
         self.__current_basket = current_basket
-    def summary_order(self, order: Order):
-        member_info = self.get_member_info()
-        basket_items, total_price = self.view_basket()
-        order_type = order.get_order_type()
-        summary_order = [member_info,basket_items, total_price , order_type]
-        return summary_order
-    def get_username(self):
-        return self.__username
+        self.__member_info = None
 
-    def view_basket(self):
-        return self.__current_basket.item_selected()
+    def summary_order(self, order: Order):
+        if not self.__member_info:
+            return None
+        
+        basket_items, total_price, discount_applied, discount_include = self.view_basket()
+        order_type = order.get_order_type()
+        return [self.__member_info, basket_items, total_price, order_type, discount_applied]
 
     def get_id(self):
         return self.__username
 
-
-    def get_member_info(self):
-        self.__member_info = account.get_member_info() 
-        return self.__member_info
+    def view_basket(self):
+        return self.__current_basket.item_selected(system)
 
     def set_member_info(self, account):
         self.__member_info = account.get_member_info()
@@ -168,25 +130,20 @@ class Account:
         return [self.__name, self.__surname, self.__account_ID, self.__tel_no, self.__address, self.__email]
 
 
-
 system = System()
-
-
 member = system.create_member("somchai123", "1234")
-
-
 account = Account("Somchai", "Jaidee", "somchai123", "081-234-5678", "123/45 Sukhumvit Rd, Bangkok", "somchai@example.com")
 member.set_member_info(account)
 
-
 basket = member._Member__current_basket
 basket.add_basket_item(PickedItem({"name": "Fried Chicken", "price": 50}, 2))
-basket.add_basket_item(PickedItem({"name": "chips", "price": 35}, 1))
+basket.add_basket_item(PickedItem({"name": "Chips", "price": 35}, 1))
 
-# Create order
 order = Order("ORDER123", "Delivery", member)
 
-@rt('/')
+
+
+@rt('/summary')
 def summary_page():
     
     
@@ -204,7 +161,7 @@ def summary_page():
     if not summary:
         return H1("Member not found", style=f"color: red; text-align: center;")
 
-    user_info, items, total_price, order_type = summary
+    user_info, items, total_price, order_type ,discount_applied = summary
 
     member_info_group = Card(
         H2("Customer Information", style=f"margin-bottom: 15px; color: #C5D6BA;"),
@@ -235,8 +192,11 @@ def summary_page():
 
     coupon_and_total_group = Card(
         H2("Order Summary", style=f"margin-bottom: 10px; color:#9BC2B2;"),
-        P("Discount: None", style=f"color: {card_text};"),
+        H3(f"Discount Applied: {discount_applied} THB"),
+
+
         H3(f"Total Price: {total_price} THB", style=f"color: #9BC2B2;"),
+
         style=f"padding: 20px; margin-top: 20px; background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"
     )
 
@@ -248,7 +208,6 @@ def summary_page():
         coupon_and_total_group,
         style=f"padding: 30px; background-color: {bg_color}; min-height: 100vh;"
     )
-
 
 
 serve()
