@@ -4,9 +4,6 @@ from datetime import datetime, time, timedelta
 
 
 app, rt = fast_app()
-class Ordertype:
-    def __init__(self,):
-        pass
 
 class Delivery:
     def __init__(self):
@@ -56,6 +53,30 @@ class System:
 
         matched_branches = [branch.get_branch_info() for branch in self.__branches if branch.get_branch_info()['postcode'] == post_number]
         return matched_branches
+
+    def search_branches(self, postcode: str):
+        branch_list = self.find_branch_from_post(postcode)
+        if branch_list:
+            return Div(
+                *[
+                    Div(
+                        Div(
+                            H3(f"สาขา : {branch['district']}", cls="branch-title"),
+                            P(f"ที่อยู่ : {branch['address']}", cls="branch-address"),
+                            Button("เลือก",
+                                   hx_post="/select_branch",
+                                   hx_vals={"district": branch["district"], "address": branch["address"]},
+                                   hx_target="#selected_branch",
+                                   cls="select-button"
+                            )
+                        ),
+                        cls="branch-card"
+                    )
+                    for branch in branch_list
+                ]
+            )
+        else:
+            return B("ไม่พบสาขาสำหรับรหัสไปรษณีย์นี้", cls="no-branch")
 
 
 system = System()
@@ -117,30 +138,6 @@ branches = [
 for branch in branches:
     system.add_branch(branch)
 
-
-def search_branches(postcode: str):
-    branch_list = system.find_branch_from_post(postcode)
-    if branch_list:
-        return Div(
-            *[
-                Div(
-                    Div(
-                        H3(f"สาขา : {branch['district']}", cls="branch-title"),
-                        P(f"ที่อยู่ : {branch['address']}", cls="branch-address"),
-                        Button("เลือก",
-                               hx_post="/select_branch",
-                               hx_vals={"district": branch["district"], "address": branch["address"]},
-                               hx_target="#selected_branch",
-                               cls="select-button"
-                        )
-                    ),
-                    cls="branch-card"
-                )
-                for branch in branch_list
-            ]
-        )
-    else:
-        return B("ไม่พบสาขาสำหรับรหัสไปรษณีย์นี้", cls="no-branch")
     
 @rt('/')
 def order_type():
@@ -501,7 +498,7 @@ def select_delivery():
 def search(postcode: Optional[str] = None):
     if not postcode or not postcode.strip().isdigit():
         return B("กรุณากรอกรหัสไปรษณีย์เป็นตัวเลข")
-    result = search_branches(postcode.strip())
+    result = system.search_branches(postcode.strip())
     return Div(result)
 
 pickup = PickUp()
