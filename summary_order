@@ -1,234 +1,514 @@
 from fasthtml.common import *
+from typing import List, Tuple, Optional
+from datetime import datetime, time, timedelta
+
 
 app, rt = fast_app()
 
-class Order:
-    def __init__(self, order_ID, order_type, member):
-        self.__order_ID = order_ID
-        self.__order_type = order_type
-        self.__member = member
+class Delivery:
+    def __init__(self):
+        self.__address = None
 
-    def select_order_type(self, order_type):
-        if order_type.lower() in ["delivery", "pickup"]:
-            self.__order_type = order_type.lower()
-            return self.__order_type
-        else:
-            return "Invalid"
+    def get_address(self):
+        return self.__address
+    
+    def set_address(self, address_info: str):
+        self.__address = address_info
+        
+class PickUp:
+    def __init__(self):
+        self.__selected_branch = None
 
-    def get_order_type(self):
-        return self.__order_type
+    def get_selected_branch(self):
+        return self.__selected_branch
 
+    def set_branch(self, branch_info):
+        self.__selected_branch = branch_info
+    
+class Branch:
+    def __init__(self, postcode, district, address):
+        self.__postcode = postcode
+        self.__district = district
+        self.__address = address
+
+    def get_branch_info(self):
+        return {
+            "postcode": self.__postcode,  
+            "district": self.__district,  
+            "address": self.__address
+        }
 
 class System:
     def __init__(self):
-        self.__branch = []
-        self.__stock = []
-        self.__promotion = []
-        self.__member_list = []
+        self.__branches = []
 
-    def search_member(self, ID):
-        for member in self.__member_list:
-            if member.get_id() == ID:
-                return member
-        return None
+    def add_branch(self, branch: Branch):
+        self.__branches.append(branch)
 
-    def view_basket(self, member):
-        return member.view_basket()
+    def find_branch_from_post(self, post_number: str):
+        try:
+            post_number = int(post_number)
+        except ValueError:
+            return [] 
 
-    def create_member(self, username, password):
-        new_member = Member(username, password, [], Basket())
-        self.__member_list.append(new_member)
-        return new_member
+        matched_branches = [branch.get_branch_info() for branch in self.__branches if branch.get_branch_info()['postcode'] == post_number]
+        return matched_branches
 
-    def add_branch(self, branch):
-        self.__branch.append(branch)
-
-    def add_boxset(self, boxset):
-        self.__stock.append(boxset)
-
-    def login(self, username, password):
-        for member in self.__member_list:
-            if member.verify_password(password):
-                return member
-        return None
-
-    def edit_password(self, username, new_password):
-        for member in self.__member_list:
-            if member.get_username() == username:
-                member.edit_password(new_password)
-                return True
-        return False
-
-    def summary_order(self, member_id, order: Order):
-        member = self.search_member(member_id)
-        if not member:
-            return None
-        summary = member.summary_order(order)
-        return summary
-        
-
-
-class PickedItem:
-    def __init__(self, product, quantity):
-        self.__product = product
-        self.__quantity = quantity
-
-    def get_item_info(self):
-        return {
-            "name": self.__product["name"],
-            "price": self.__product["price"],
-            "quantity": self.__quantity
-        }
-
-
-class Basket:
-    def __init__(self):
-        self.__items = []
-
-    def add_basket_item(self, item: PickedItem):
-        self.__items.append(item)
-
-    def remove_basket_item(self, item_name):
-        self.__items = [item for item in self.__items if item.get_item_info()["name"] != item_name]
-
-    def calculate_total_price(self):
-        return sum(item.get_item_info()["price"] * item.get_item_info()["quantity"] for item in self.__items)
-
-    def item_selected(self):
-        items = [item.get_item_info() for item in self.__items]
-        total_price = self.calculate_total_price()
-        return items, total_price
-
-
-class Member:
-    def __init__(self, username, password, order_history, current_basket: Basket):
-        self.__username = username
-        self.__password = password
-        self.__order_history = order_history
-        self.__current_basket = current_basket
-    def summary_order(self, order: Order):
-        member_info = self.get_member_info()
-        basket_items, total_price = self.view_basket()
-        order_type = order.get_order_type()
-        summary_order = [member_info,basket_items, total_price , order_type]
-        return summary_order
-    def get_username(self):
-        return self.__username
-
-    def view_basket(self):
-        return self.__current_basket.item_selected()
-
-    def get_id(self):
-        return self.__username
-
-    def verify_password(self, password):
-        return self.__password == password
-
-    def edit_password(self, new_password):
-        self.__password = new_password
-
-    def get_member_info(self):
-        self.__member_info = account.get_member_info() 
-        return self.__member_info
-
-    def set_member_info(self, account):
-        self.__member_info = account.get_member_info()
-
-
-class Account:
-    def __init__(self, name, surname, account_ID, tel_no, address, email):
-        self.__name = name
-        self.__surname = surname
-        self.__account_ID = account_ID
-        self.__tel_no = tel_no
-        self.__address = address
-        self.__email = email
-
-    def get_member_info(self):
-        return [self.__name, self.__surname, self.__account_ID, self.__tel_no, self.__address, self.__email]
-
+    def search_branches(self, postcode: str):
+        branch_list = self.find_branch_from_post(postcode)
+        if branch_list:
+            return Div(
+                *[
+                    Div(
+                        Div(
+                            H3(f"สาขา : {branch['district']}", cls="branch-title"),
+                            P(f"ที่อยู่ : {branch['address']}", cls="branch-address"),
+                            Button("เลือก",
+                                   hx_post="/select_branch",
+                                   hx_vals={"district": branch["district"], "address": branch["address"]},
+                                   hx_target="#selected_branch",
+                                   cls="select-button"
+                            )
+                        ),
+                        cls="branch-card"
+                    )
+                    for branch in branch_list
+                ]
+            )
+        else:
+            return B("ไม่พบสาขาสำหรับรหัสไปรษณีย์นี้", cls="no-branch")
 
 
 system = System()
+delivery = Delivery()
+branches = [
+    Branch(10200, "พระนคร", "กรุงเทพ,ประเทศไทย"),
+    Branch(10300, "ดุสิต", "กรุงเทพ,ประเทศไทย"),
+    Branch(10530, "หนองจอก", "กรุงเทพ,ประเทศไทย"),
+    Branch(10500, "บางรัก", "กรุงเทพ,ประเทศไทย"),
+    Branch(10220, "บางเขน", "กรุงเทพ,ประเทศไทย"),
+    Branch(10240, "บางกะปิ", "กรุงเทพ,ประเทศไทย"),
+    Branch(10330, "ปทุมวัน", "กรุงเทพ,ประเทศไทย"),
+    Branch(10100, "ป้อมปราบศัตรูพ่าย", "กรุงเทพ,ประเทศไทย"),
+    Branch(10260, "พระโขนง", "กรุงเทพ,ประเทศไทย"),
+    Branch(10510, "มีนบุรี", "กรุงเทพ,ประเทศไทย"),
+    Branch(10520, "ลาดกระบัง", "กรุงเทพ,ประเทศไทย"),
+    Branch(10120, "ยานนาวา", "กรุงเทพ,ประเทศไทย"),
+    Branch(10100, "สัมพันธวงศ์", "กรุงเทพ,ประเทศไทย"),
+    Branch(10400, "พญาไท", "กรุงเทพ,ประเทศไทย"),
+    Branch(10600, "ธนบุรี", "กรุงเทพ,ประเทศไทย"),
+    Branch(10600, "บางกอกใหญ่", "กรุงเทพ,ประเทศไทย"),
+    Branch(10310, "ห้วยขวาง", "กรุงเทพ,ประเทศไทย"),
+    Branch(10600, "คลองสาน", "กรุงเทพ,ประเทศไทย"),
+    Branch(10170, "ตลิ่งชัน", "กรุงเทพ, ประเทศไทย"),
+    Branch(10700, "บางกอกน้อย", "กรุงเทพ,ประเทศไทย"),
+    Branch(10150, "บางขุนเทียน", "กรุงเทพ,ประเทศไทย"),
+    Branch(10160, "ภาษีเจริญ", "กรุงเทพ,ประเทศไทย"),
+    Branch(10160, "หนองแขม", "กรุงเทพ,ประเทศไทย"),
+    Branch(10140, "ราษฎร์บูรณะ", "กรุงเทพ,ประเทศไทย"),
+    Branch(10700, "บางพลัด", "กรุงเทพ,ประเทศไทย"),
+    Branch(10400, "ดินแดง", "กรุงเทพ,ประเทศไทย"),
+    Branch(10240, "บึงกุ่ม", "กรุงเทพ,ประเทศไทย"),
+    Branch(10120, "สาทร", "กรุงเทพ,ประเทศไทย"),
+    Branch(10800, "บางซื่อ", "กรุงเทพ,ประเทศไทย"),
+    Branch(10900, "จตุจักร", "กรุงเทพ,ประเทศไทย"),
+    Branch(10120, "บางคอแหลม", "กรุงเทพ,ประเทศไทย"),
+    Branch(10250, "ประเวศ", "กรุงเทพ,ประเทศไทย"),
+    Branch(10110, "คลองเตย", "กรุงเทพ,ประเทศไทย"),
+    Branch(10250, "สวนหลวง", "กรุงเทพ,ประเทศไทย"),
+    Branch(10150, "จอมทอง", "กรุงเทพ,ประเทศไทย"),
+    Branch(10210, "ดอนเมือง", "กรุงเทพ,ประเทศไทย"),
+    Branch(10400, "ราชเทวี", "กรุงเทพ,ประเทศไทย"),
+    Branch(10230, "ลาดพร้าว", "กรุงเทพ,ประเทศไทย"),
+    Branch(10110, "วัฒนา", "กรุงเทพ,ประเทศไทย"),
+    Branch(10240, "สะพานสูง", "กรุงเทพ,ประเทศไทย"),
+    Branch(10100, "สัมพันธวงศ์", "กรุงเทพ,ประเทศไทย"),
+    Branch(10120, "สาทร", "กรุงเทพ,ประเทศไทย"),
+    Branch(10220, "สายไหม", "กรุงเทพ,ประเทศไทย"),
+    Branch(10230, "คันนายาว", "กรุงเทพ,ประเทศไทย"),
+    Branch(10240, "สะพานสูง", "กรุงเทพ,ประเทศไทย"),
+    Branch(10310, "วังทองหลาง", "กรุงเทพ,ประเทศไทย"),
+    Branch(10510, "คลองสามวา", "กรุงเทพ,ประเทศไทย"),
+    Branch(10260, "บางนา", "กรุงเทพ,ประเทศไทย"),
+    Branch(10170, "ทวีวัฒนา", "กรุงเทพ,ประเทศไทย"),
+    Branch(10140, "ทุ่งครุ", "กรุงเทพ,ประเทศไทย"),
+    Branch(10150, "บางบอน", "กรุงเทพ,ประเทศไทย")
+]
 
+for branch in branches:
+    system.add_branch(branch)
 
-member = system.create_member("somchai123", "1234")
-
-
-account = Account("Somchai", "Jaidee", "somchai123", "081-234-5678", "123/45 Sukhumvit Rd, Bangkok", "somchai@example.com")
-member.set_member_info(account)
-
-
-basket = member._Member__current_basket
-basket.add_basket_item(PickedItem({"name": "Fried Chicken", "price": 50}, 2))
-basket.add_basket_item(PickedItem({"name": "chips", "price": 35}, 1))
-
-# Create order
-order = Order("ORDER123", "Delivery", member)
-
+    
 @rt('/')
-def summary_page():
-    
-    
-    bg_color = "#121212"
-    text_color = "#f5f5f5"
-    card_bg = "#424242"
-    card_text = "#ffffff"
-    border_color = "#555555"
-  
-    member_id = "somchai123"
-    order = Order("ORDER123", "Delivery", None)
+def order_type():
+    return Div(
+        H1("เลือกช่องทางการรับออเดอร์", cls="title"),
+        Style("""
+            @import url('https://fonts.googleapis.com/css2?family=TH+Sarabun:wght@400;500;700&display=swap');
 
-    summary = system.summary_order(member_id, order)
+            html, body {
+                background: #ffffff;
+                min-height: 100vh;
+                margin: 0;
+                padding: 0;
+                font-family: 'TH Sarabun', sans-serif;
+                display: flex;
+                align-items: center;  /* จัดกลางในแนวตั้ง */
+                justify-content: center; /* จัดกลางในแนวนอน */
+                text-align: center;
+            }
 
-    if not summary:
-        return H1("Member not found", style=f"color: red; text-align: center;")
+            .title {
+                font-size: 40px;
+                font-weight: 700;
+                color: #000000;
+                text-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+                margin-top: -100px;
+            }
 
-    user_info, items, total_price, order_type = summary
+            .order-container {
+                width: 400px;
+                padding: 400px;
+                display: flex;
+                flex-direction: column;
+                align-items: center; /* จัดแนวตั้งกลาง */
+                gap: 40px;
+                height: 200px;
+                margin-top: -300px;
+            }
 
-    member_info_group = Card(
-        H2("Customer Information", style=f"margin-bottom: 15px; color: #C5D6BA;"),
+            .order-button {
+                width: 250px;
+                height: 60px;
+                font-size: 22px;
+                font-weight: bold;
+                text-align: center;
+                border: 2px solid #000000; /* กรอบสีดำ */
+                background: #ffffff; /* พื้นหลังสีขาว */
+                color: #000000; /* ตัวอักษรสีดำ */
+                border-radius: 10px;
+                cursor: pointer;
+                box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+                transition: all 0.3s ease-in-out;
+            }
+
+            .order-button:hover {
+                background: #f0f0f0; /* พื้นหลังสีเทาอ่อนเมื่อ hover */
+                transform: scale(1.05);
+                box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+            }
+
+            .order-button:active {
+                transform: scale(0.95);
+                box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+            }
+        """),
         Div(
-            P(f"Name: {user_info[0]} {user_info[1]}", style=f"color: {card_text};"),
-            P(f"Order Type: {order_type}", style=f"color: {card_text};"),
-            P(f"Address: {user_info[4]}", style=f"color: {card_text};"),
-            P(f"Phone Number: {user_info[3]}", style=f"color: {card_text};"),
-            P(f"Order ID: ORDER123", style=f"color: {card_text};"),
-            style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"
+            Button("🚚 รับที่ร้าน", onclick="window.location.href='/pickup';", cls="order-button"),
+            Button("🏡 เดลิเวอรี่", onclick="window.location.href='/delivery';", cls="order-button"),
+            cls="order-container"
+        )
+    )
+
+@rt('/pickup')
+def get():
+    return Titled("เลือกสาขา",
+    Style(""" 
+        @import url('https://fonts.googleapis.com/css2?family=TH+Sarabun:wght@400;500;700&display=swap');
+
+        html, body {
+            background: #ffffff;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'TH Sarabun', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-top: -30px;
+        }
+
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #000000;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .select-button {
+            width: 180px; /* ลดขนาดความกว้างลง */
+            height: 50px; /* ขนาดความสูงคงที่ */
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #000000; /* กรอบสีดำ */
+            background: #ffffff; /* พื้นหลังสีขาว */
+            color: #000000; /* ตัวอักษรสีดำ */
+            border-radius: 8px; /* มุมปุ่มโค้ง */
+            cursor: pointer;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2); /* เงาลดลงเล็กน้อย */
+            transition: all 0.3s ease-in-out;
+        }
+
+        .select-button:hover {
+            background: #f0f0f0;
+            transform: scale(1.05);
+            box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .select-button:active {
+            transform: scale(0.95);
+            box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.2);
+        }
+          
+        .input-postcode {
+            width: 400px !important;
+            height: 50px !important;
+            font-size: 18px !important;
+            padding: 10px !important;
+            border-radius: 10px !important;
+            border: 1px solid #ddd !important;
+            background-color: #ffffff !important;
+            color: #333 !important;
+        }
+
+        .input-postcode::placeholder {
+            color: #333 !important;
+        }
+
+        .input-postcode:focus {
+            background-color: #f0f0f0 !important;
+            border: 1px solid #000 !important;
+        }
+
+        .search-button {
+            width: 250px;
+            height: 60px;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid #000000;
+            background: #ffffff;
+            color: #000000;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .search-button:hover {
+            background: #f0f0f0;
+            transform: scale(1.05);
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-button:active {
+            transform: scale(0.95);
+            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .branch-card {
+            background: white;
+            padding: 20px;
+            margin: 15px auto;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #ff0000;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .branch-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .done-button {
+            width: 250px;
+            height: 60px;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid #000000;
+            background: #ffffff;
+            color: #000000;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease-in-out;
+            margin-top: 20px;
+        }
+
+        .done-button:hover {
+            background: #f0f0f0;
+            transform: scale(1.05);
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .done-button:active {
+            transform: scale(0.95);
+            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .no-branch-card {
+            color: #333;
+            margin: 10px;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            font-family: 'TH Sarabun', sans-serif;
+        }
+    """),
+    Form(Input(id="postcode", placeholder="กรอกรหัสไปรษณีย์...", name="postcode", cls="input-postcode"), 
+         hx_get="/search", target_id="results", hx_trigger="keyup delay:200ms"),
+    Div(id="results"),
+    H3("สาขาที่เลือก :"),
+    Div(B("ยังไม่ได้เลือกสาขา"), id="selected_branch", cls="no-branch-card"),
+    Button("เสร็จสิ้น", onclick="window.location.href='/';", cls="done-button"),
+)
+
+@rt('/delivery')
+def delivery_page():
+    return Titled("ที่อยู่จัดส่ง",
+        Style("""
+                @import url('https://fonts.googleapis.com/css2?family=TH+Sarabun:wght@400;500;700&display=swap');
+
+                html, body {
+                    background: #ffffff;
+                    min-height: 100vh;
+                    margin: 0;
+                    padding: 0;
+                    font-family: 'TH Sarabun', sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                    margin-top: -200px;
+                }
+
+                .title {
+                    font-size: 40px;
+                    font-weight: 700;
+                    color: #000000;
+                    text-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+                }
+
+                .delivery-container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 20px;
+                    margin-top: 100px;
+                }
+
+                .delivery-input {
+                    width: 400px;
+                    height: 50px;
+                    font-size: 18px;
+                    padding: 10px;
+                    border-radius: 10px;
+                    border: 1px solid #ddd;
+                    background-color: #ffffff;
+                    color: #333;
+                    box-sizing: border-box;
+                    margin-top: 70px;
+                }
+
+                .delivery-input::placeholder {
+                    color: #333;
+                }
+
+                .delivery-input:focus {
+                    background-color: #f0f0f0;
+                    border: 1px solid #000;
+                }
+
+                .done-button {
+                    width: 250px;
+                    height: 60px;
+                    font-size: 22px;
+                    font-weight: bold;
+                    text-align: center;
+                    border: 2px solid #000000;
+                    background: #ffffff;
+                    color: #000000;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+                    transition: all 0.3s ease-in-out;
+                    margin-top: 50px;
+                }
+
+                .done-button:hover {
+                    background: #f0f0f0;
+                    transform: scale(1.05);
+                    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+                }
+
+                .done-button:active {
+                    transform: scale(0.95);
+                    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+                }
+
+                .address-confirmation {
+                    font-size: 18px;
+                    color: #333;
+                    margin-top: 20px;
+                    font-weight: 500;
+                }
+        """),
+        Form(
+            Input(id="delivery_address", placeholder="กรอกที่อยู่จัดส่งของคุณ...", name="address", cls="delivery-input"),
+            Button("ยืนยัน", cls="done-button"),
+            method='post',
+            action="/submit_address"
         ),
-        style=f"padding: 20px; margin-bottom: 20px; background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"
-    )
-
-    basket_group = Grid(
-        *[
-            Card(
-                H3(item["name"], style=f"margin-bottom: 5px; color: #F5E3CB;"),
-                P(f"Quantity: {item['quantity']} pcs", style=f"color: {card_text};"),
-                P(f"Unit Price: {item['price']} THB", style=f"color: {card_text};"),
-                P(f"Subtotal: {item['quantity'] * item['price']} THB", style=f"color: {card_text};"),
-                style=f"padding: 15px; background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"
-            )
-            for item in items
-        ],
-        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 10px;"
-    )
-
-    coupon_and_total_group = Card(
-        H2("Order Summary", style=f"margin-bottom: 10px; color:#9BC2B2;"),
-        P("Discount: None", style=f"color: {card_text};"),
-        H3(f"Total Price: {total_price} THB", style=f"color: #9BC2B2;"),
-        style=f"padding: 20px; margin-top: 20px; background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"
-    )
-
-    return Container(
-        H1("Order Summary", style=f"text-align: center; margin-bottom: 30px; color: {text_color};"),
-        member_info_group,
-        H2("Items in Basket", style=f"margin-top: 20px; color: #F6C8B6;"),
-        basket_group,
-        coupon_and_total_group,
-        style=f"padding: 30px; background-color: {bg_color}; min-height: 100vh;"
+        Div(id="address_confirmation"),
     )
 
 
+
+@rt('/submit_address')
+def submit_address(address: str):
+    if not address:
+        return B("Please enter a valid address.")
+
+    delivery.set_address(address)
+    
+    print(f"Address entered: {delivery.get_address()}")
+    
+@rt('/select_delivery')
+def select_delivery():
+    return Titled("Delivery Information",
+        H3(f"Delivery Address: {delivery.get_address()}"),
+        Button("Done", onclick="window.location.href='/';", cls = "done-button"),
+    )
+
+@rt('/search')
+def search(postcode: Optional[str] = None):
+    if not postcode or not postcode.strip().isdigit():
+        return B("กรุณากรอกรหัสไปรษณีย์เป็นตัวเลข")
+    result = system.search_branches(postcode.strip())
+    return Div(result)
+
+pickup = PickUp()
+
+@rt('/select_branch')
+def select_branch(district: str, address: str):
+    branch_info = {"district": district , "address": address}
+    pickup.set_branch(branch_info)
+    print(f"Branch Select : {pickup.get_selected_branch()}")
+    return B(f"{district} ({address})")
+    
 
 serve()
