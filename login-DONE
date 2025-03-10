@@ -1,0 +1,125 @@
+@rt("/login")
+def get():
+    grid_content = [
+    navbar(),  # เรียกใช้ Navbar
+    order_section(),  # เรียกใช้ Order Section
+    ]
+    grid_content.append(Container(
+        Style("""
+            @import url('https://fonts.googleapis.com/css2?family=TH+Sarabun:wght@400;500;700&display=swap');
+
+            html, body {
+                background: #ffffff;
+                min-height: 100vh;
+                margin: 0;
+                padding: 0;
+                font-family: 'TH Sarabun', sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                text-align: center;
+            }
+
+            .login-title {
+                font-size: 42px;
+                font-weight: 800;
+                color: #000000;
+                margin-top: 30px;
+            }
+
+            .login-form {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 25px;
+                margin-top: 20px;
+            }
+
+            .input-username, .delivery-input {
+                width: 400px;
+                height: 50px;
+                font-size: 18px;
+                padding: 10px;
+                border-radius: 10px;
+                border: 1px solid #ddd;
+                background-color: #ffffff;
+                color: #333;
+                box-sizing: border-box;
+            }
+
+            .input-username::placeholder,
+            .delivery-input::placeholder {
+                color: #333;
+            }
+
+            .input-username:focus,
+            .delivery-input:focus {
+                background-color: #f0f0f0;
+                border: 1px solid #000;
+            }
+
+            .login-submit-button {
+                width: 250px;
+                height: 60px;
+                font-size: 22px;
+                font-weight: bold;
+                text-align: center;
+                border: none;                          /* ไม่มีเส้นขอบ */
+                background: #cccccc;                   /* สีเทาอ่อน */
+                color: #3d3c3c;
+                border-radius: 50px;                   /* <<< ทำให้เป็นวงรี */
+                cursor: pointer;
+                box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+                transition: all 0.3s ease-in-out;
+                margin-top: 40px;
+            }
+
+            .login-submit-button:hover {
+                background: #bbbbbb;                   /* สีเทาเข้มขึ้นเล็กน้อยตอน hover */
+                transform: scale(1.05);
+                box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+            }
+
+            .login-submit-button:active {
+                transform: scale(0.95);
+                box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+            }
+
+            .username-label {
+                margin-top: 20px;
+                text-align: left;
+                display: block;            /* ให้ label แสดงเต็มบรรทัด */
+                width: 100%;               /* ขยาย label ให้กว้างเต็มบรรทัด */
+                padding-left: 10px;        /* (ถ้าอยากมีระยะห่างเล็กน้อยจากซ้าย) */
+                box-sizing: border-box;
+            }
+            .password-label {
+                margin-top: 20px;
+                text-align: left;
+                display: block;            /* ให้ label แสดงเต็มบรรทัด */
+                width: 100%;               /* ขยาย label ให้กว้างเต็มบรรทัด */
+                padding-left: 10px;        /* (ถ้าอยากมีระยะห่างเล็กน้อยจากซ้าย) */
+                box-sizing: border-box;
+                margin-top: -10px;
+            }
+        """),
+        H1("เข้าสู่ระบบ", cls="login-title"),
+        Form(
+            Div(
+                Label("Username:", For="username", cls="username-label"),
+                Input(type="text", id="username", placeholder="กรอกชื่อผู้ใช้งาน...", required=True, cls="input-username"),
+                cls="login-form"
+            ),
+            Div(
+                Label("Password:", For="password", cls="password-label"),
+                Input(type="password", id="password", placeholder="กรอกรหัสผ่าน...", required=True, cls="delivery-input"),
+                cls="login-form"
+            ),
+            Button("เข้าสู่ระบบ", type="submit", cls="login-submit-button"),
+            method="post",
+            action="/login/submit"
+        )
+    )
+    )
+    return grid_content
