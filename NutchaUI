@@ -32,6 +32,7 @@ def view_basket(coupon_code: str = ""):
             H2(f"Total Item:\n {len(items)}"),
 
             Form(
+                H3 ("COUPON 🎟️")
                 Label("Enter coupon code", Input(name="coupon_code", placeholder="Coupon code", value=coupon_code)),
                 Button("Use Code", style="background-color: grey; color: white; padding: 10px 20px; border: none;"),
                 method="get",
@@ -39,6 +40,7 @@ def view_basket(coupon_code: str = ""):
             ),
 
             Div(
+
                 H3(f"Total Price (Before Discount): {total_price:.2f} THB"),
                 H3(f"Discount Applied: {discount_applied:.2f} THB"),
                 H3(f"Total After Discount: {discount_include:.2f} THB"),
