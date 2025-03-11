@@ -2599,71 +2599,39 @@ def get():
         """),
         H1("สร้างบัญชีผู้ใช้", cls="register-title"),
         Form(
-        Div(
-            Label("Name:", cls="name-label"),
-            Input(type="text", id="name", placeholder="ชื่อจริง", required=True, cls="input-field"),
-            cls="register-form"
-        ),
-        Div(
-            Label("Surname:", cls="surname-label"),
-            Input(type="text", id="surname", placeholder="นามสกุล", required=True, cls="input-field"),
-            cls="register-form"
-        ),
-        Div(
-            Label("Phone Number:", cls="phone-label"),
-            Input(type="text", id="tel_number", placeholder="หมายเลขโทรศัพท์", required=True, cls="input-field"),
-            cls="register-form"
-        ),
-        Div(
-            Label("Email:", cls="email-label"),
-            Input(type="email", id="email", placeholder="อีเมล", required=True, cls="input-field"),
-            cls="register-form"
-        ),
-        Div(
-            Label("Username:", cls="username-label2"),
-            Input(type="text", id="username", placeholder="ชื่อ Username", required=True, cls="input-field"),
-            cls="register-form"
-        ),
-        Div(
-            Label("Password:", cls="password-label2"),
-            Input(type="password", id="password", placeholder="รหัสผ่าน", required=True, cls="input-field"),
-            cls="register-form"
-        ),
-        Div(
-            Label("Confirm Password:", cls="confirm-password-label", style= {
-                "align-items": "left",
-            "justify-content": "center"
-            }),
-            Input(type="password", id="confirm_password", placeholder="ยืนยันรหัสผ่าน", required=True, cls="input-field"),
-            cls="register-form",
-            style={
-        "display": "flex",
-        "flex-direction": "column",  # จัดให้อยู่เรียงแนวตั้ง
-        "align-items": "flex-start",  # จัดให้อยู่ชิดซ้าย
-            }
-
-        ),
-        Button("สร้างบัญชี", type="submit", cls="register-submit-button", onclick="return validatePassword()"),
-        Script("""
-        function validatePassword() {
-            var password = document.getElementById("password").value;
-            var confirmPassword = document.getElementById("confirm_password").value;
-
-            if (password.length < 6) {
-                alert("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
-                return false;
-            }  
-            if (!/[0-9]/.test(password)) {
-                alert("รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว");
-                return false;
-            }
-            if (password !== confirmPassword) {
-                alert("รหัสผ่านไม่ตรงกัน กรุณาลองอีกครั้ง");
-                return false;
-            }
-            return true;
-        }
-        """)
+            Div(
+                Label("Name:", cls="name-label"),
+                Input(type="text", id="name", placeholder="ชื่อจริง", required=True, cls="input-field"),
+                cls="register-form"
+            ),
+            Div(
+                Label("Surname:", cls="surname-label"),
+                Input(type="text", id="surname", placeholder="นามสกุล", required=True, cls="input-field"),
+                cls="register-form"
+            ),
+            Div(
+                Label("Phone Number:", cls="phone-label"),
+                Input(type="text", id="tel_number", placeholder="หมายเลขโทรศัพท์", required=True, cls="input-field"),
+                cls="register-form"
+            ),
+            Div(
+                Label("Email:", cls="email-label"),
+                Input(type="email", id="email", placeholder="อีเมล", required=True, cls="input-field"),
+                cls="register-form"
+            ),
+            Div(
+                Label("Username:", cls="username-label2"),
+                Input(type="text", id="username", placeholder="ชื่อ Username", required=True, cls="input-field"),
+                cls="register-form"
+            ),
+            Div(
+                Label("Password:", cls="password-label2"),
+                Input(type="password", id="password", placeholder="รหัสผ่าน", required=True, cls="input-field"),
+                cls="register-form"
+            ),
+            Button("สร้างบัญชี", type="submit", cls="register-submit-button"),
+            method="post",
+            action="/register/submit"
         )
     ))
     return grid_content
@@ -2788,8 +2756,19 @@ def summary_page():
         H2(f"Total Price: {total_price} THB", style=f"color: #000000;"),
         style=f"padding: 20px; background-color: {card_bg}; border-radius: 10px;"
     )
-    Button("Back to home", onclick="window.location='/'", style="background-color: red; color: white; padding: 10px 20px; border: none;")
-    return Container(H1("Order Summary", style=f"text-align: center; color: {text_color};"), member_info_group, H2("Items in Basket", style=f"color: #ff3333;"), basket_group, coupon_and_total_group, style=f"padding: 30px; background-color: {bg_color};")
+    return Container(
+        H1("Order Summary", style=f"text-align: center; color: {text_color};"),
+        member_info_group,
+        H2("Items in Basket", style="color: #ff3333;"),
+        basket_group,
+        coupon_and_total_group,
+        Div(
+            Button("Back to Home", onclick="window.location='/'", style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 5px;"),
+            Button("New Order", onclick="window.location='/menu'", style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-left: 10px;"),
+            style="text-align: center; margin-top: 20px;"
+        ),
+            style=f"padding: 30px; background-color: {bg_color};"
+        )
 @rt("/account")
 def get(): 
     grid_content = []
