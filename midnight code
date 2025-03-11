@@ -1861,7 +1861,7 @@ def view_basket(coupon_code: str = ""):
                 *[
                     P(f"Sweets Level: {item["name"].get_select()}") if (isinstance(item["name"],Drink)) and (item["name"].get_select()) else None,
                     P(f"Spiciness Level: {item["name"].get_select()}") if (isinstance(item["name"],Savory)) and (item["name"].get_select()) else None,
-                    P(f"Select menu: {item["name"].get_selected_menu()}") if (isinstance(item["name"],Boxset)) else None
+                    P(f"Select menu: {item["name"].get_selected_menu()}") if (isinstance(item["name"],Boxset)) else None,
                 ]
             )
             for item in items
@@ -2805,6 +2805,7 @@ def get():
                 # ข้อความ (อยู่ขวา)
                 Div(
                     P('สแกนเพื่อชำระเงิน', style ='font-size: 50px'),
+                    P(f"Price: {member.get_current_basket().calculate_total_price()}"),
                     Button('ชำระเงินเสร็จสิ้น',hx_post=f'/total/order/{member.get_id}',style="background-color: green; color: white; padding: 10px 20px; border: none;")
                    
                     
@@ -2930,6 +2931,7 @@ def get():
             }
         """),
         H1("ชำระเงินด้วยบัตรเครดิต", cls="register-title"),
+        P(f"Price: {member.get_current_basket().calculate_total_price()}"),
         Form(
             Div(
                 Label("ชื่อ:", cls="label"),
