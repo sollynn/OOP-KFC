@@ -479,6 +479,9 @@ class Member(Account):
     def add_delivery(self,delivery):
         self.__delivery = delivery
 
+    def make_new_order(self):
+        self.__current_basket = Basket()
+        self.__order_type = None
 
     def change_password(self, old_password, new_password):
         if old_password == self.__password:
@@ -2795,11 +2798,18 @@ def summary_page():
         coupon_and_total_group,
         Div(
             Button("Back to Home", onclick="window.location='/'", style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 5px;"),
-            Button("New Order", onclick="window.location='/menu'", style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-left: 10px;"),
+            Button("New Order", onclick="window.location='/neworder'", style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-left: 10px;"),
             style="text-align: center; margin-top: 20px;"
         ),
             style=f"padding: 30px; background-color: {bg_color};"
         )
+@rt("/neworder")
+def get():
+    member = session.get_current_user()
+    member.make_new_order()
+    return Redirect("/menu")
+
+
 @rt("/account")
 def get(): 
     grid_content = []
