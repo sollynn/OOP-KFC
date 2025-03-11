@@ -1,0 +1,51 @@
+@rt('/summary')
+def summary_page():
+    bg_color = "#ffffff"
+    text_color = "#000000"
+    card_bg = "#fffdec"
+    card_text = "#000000"
+    border_color = "#ffffff"
+
+    summary = system.summary_order()
+
+    if not summary:
+        return H1("Member not found", style=f"color: red; text-align: center;")
+
+    user_info, items, total_price, order_type, discount_applied = summary
+    H2(f"Customer Information", style=f"margin-bottom: 15px; color: #ff3333;")
+
+    member_info_group = Card(
+       # H2("Customer Information", style=f"margin-bottom: 15px; color: #ff3333;"),
+        Div(
+            P(f"Name: {user_info[0]} {user_info[1]}", style=f"color: {card_text};"),
+            P(f"Order Type: {order_type}", style=f"color: {card_text};"),
+            P(f"Phone Number: {user_info[3]}", style=f"color: {card_text};"),
+            P(f"Order ID: ORDER123", style=f"color: {card_text};"),
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"
+        ),
+        style=f"padding: 20px; margin-bottom: 20px; background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 10px;"
+    )
+
+    basket_group = Grid(
+        *[
+            Card(
+
+                H3(item["name"].get_name(), style=f"margin-bottom: 5px; color: #000000;"),
+                P(f"Quantity: {item['quantity']} pcs", style=f"color: {card_text};"),
+                P(f"Unit Price: {item["name"].get_price()} THB", style=f"color: {card_text};"),
+                P(f"Subtotal: {int(item["name"].get_price()) * int(item['quantity'])} THB", style=f"color: {card_text};"),
+                style=f"padding: 15px; background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 8px;"
+            )
+            for item in items
+        ],
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;"
+    )
+    H3(f"Price", style=f"margin-bottom: 10px; color:#ff3333;")
+    coupon_and_total_group = Card(
+        
+        H2(f"Discount Applied: {discount_applied} THB", style=f"color: #000000;"),
+        H2(f"Total Price: {total_price} THB", style=f"color: #000000;"),
+        style=f"padding: 20px; background-color: {card_bg}; border-radius: 10px;"
+    )
+    Button("Back to home", onclick="window.location='/'", style="background-color: red; color: white; padding: 10px 20px; border: none;")
+    return Container(H1("Order Summary", style=f"text-align: center; color: {text_color};"), member_info_group, H2("Items in Basket", style=f"color: #ff3333;"), basket_group, coupon_and_total_group, style=f"padding: 30px; background-color: {bg_color};")
