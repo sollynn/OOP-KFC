@@ -24,7 +24,60 @@ class System:
         self.__manager_list = []
         self.__delete_list = []
 
+    def find_delete_food_by_id(self,food_id):
+        for menu in self.__delete_list:
+            if isinstance(menu,Food):
+                if menu.get_food_id() == food_id:
+                    return menu
+
+    def find_delete_boxset_by_id(self,boxset_id):
+        for boxset in self.__delete_list:
+            if isinstance(boxset,Boxset):
+                if boxset.get_boxset_id() == boxset_id:
+                    return boxset
+
+    def restore_food(self,food_id : str , manager : 'Manager'):
+        
+        menu =  self.find_delete_food_by_id(food_id)
+        if isinstance(menu,Food):
+            self.__menu_list.append(menu)
+            self.__delete_list.remove(menu)
+            manager.add_manage_history("RESTORE",food_id)
+            return Redirect("/")
+               
+    def restore_boxset(self,boxset_id : str , manager : 'Manager'):
+        
+        
+        boxset =  self.find_delete_boxset_by_id(boxset_id)
+        if isinstance(boxset,Boxset):
+            self.__boxset_list.append(boxset)
+            self.__delete_list.remove(boxset)
+            manager.add_manage_history("RESTORE",boxset_id)
+            return Redirect("/")
+
+    def delete_menu_by_id(self, menu_id : str, manager : 'Manager'):
+        
+        menu =  self.find_food_by_id(menu_id)
+        if isinstance(menu,Food):
+            self.__menu_list.remove(menu)
+            self.add_delete_food_menu(menu)
+            manager.add_manage_history("DELETE_FOOD",menu_id)
+            return Redirect("/delete_menu")
+               
+        return Redirect("/")
     
+    def delete_boxset_by_id(self, boxset_id : str , manager : 'Manager'):
+        
+        boxset =  self.find_boxset_by_id(boxset_id)
+        if isinstance(boxset,Boxset):
+            self.__boxset_list.remove(boxset)
+            self.add_delete_boxset_menu(boxset)
+            manager.add_manage_history("DELETE_BOXSET",boxset_id)
+            return Redirect("/delete_menu")
+               
+        return Redirect("/")
+    
+                
     def find_free_rider(self,order_type):
         branch = order_type.get_branch()
         rider_in_branch = branch.get_rider()
@@ -38,23 +91,25 @@ class System:
     def add_admin(self,name,surname,tel_number,email,username,password):
         admin = Manager(name,surname,tel_number,email,username,password)
         self.__manager_list.append(admin)
-
-    def delete_menu_by_id(self, menu_id : str, manager : 'Manager'):
-        for menu in self.__menu_list:
-            if menu.get_food_id() == menu_id:
-                self.__menu_list.remove(menu)
-                manager.add_manage_history("DELETE_MENU",menu_id)
-                return Redirect("/")
-               
-        return Redirect("/basket")
     
-    def delete_boxset_by_id(self, boxset_id : str , manager : 'Manager'):
+    def add_delete_boxset_menu(self,boxset):
+        self.__delete_list.append(boxset)
+
+    def add_delete_food_menu(self,food):
+        self.__delete_list.append(food)
+
+    def find_food_by_id(self,food_id):
+        for menu in self.__menu_list:
+            if isinstance (menu,Food):
+                if menu.get_food_id() == food_id:
+                    return menu
+
+    def find_boxset_by_id(self,boxset_id):
         for boxset in self.__boxset_list:
-            if boxset.get_boxset_id() == boxset_id:
-                self.__boxset_list.remove(boxset)
-                manager.add_manage_history("DELETE_BOXSET",boxset_id)
-                return Redirect("/")
-                
+             if isinstance (boxset,Boxset):
+                if boxset.get_boxset_id() == boxset_id:
+                    return boxset
+        
     def get_delete_menu(self):
         return self.__delete_list
 
@@ -250,7 +305,8 @@ class System:
             if(stock.get_product.get_name == name):
                 return stock
 
-   
+    def get_delete_menu(self):
+        return self.__delete_list
     
     def create_member(self, name, surname, account_ID, tel_no, address, email, username, password):
         new_member = Member(name, surname, account_ID, tel_no, address, email, username, password, Basket())
@@ -967,6 +1023,15 @@ def managebar():
             "padding": "10px 20px",
         }),
         Button("MenageMenu",onclick="window.location.href='/manage_menu';", style={
+            "font-weight" : "500",
+            "background": "none",
+            "border": "none",
+            "color": "black",
+            "font-size": "16px",
+            "cursor": "pointer",
+            "padding": "10px 20px",
+        }),
+        Button("RestoreMenu",onclick="window.location.href='/restore_delete_menu';", style={
             "font-weight" : "500",
             "background": "none",
             "border": "none",
@@ -1764,75 +1829,12 @@ def view_basket(coupon_code: str = ""):
 
 @rt('/selectdelivery')
 def order_type():
-    return Div(
+    grid_content = [ navbar()
+
+    ]
+    grid_content.append(Div(
         # Navbar - แยกออกจาก Order Container
-        Div(
-            Button("OUR SERVICE", onclick="window.location.href='/';", style={
-                "font-weight": "700",
-                "background": "none",
-                "border": "none",
-                "color": "red",
-                "font-size": "36px",
-                "cursor": "pointer",
-                "padding": "10px 20px",
-            }),
-            Button("Menu", onclick="window.location.href='/menu';", style={
-                "font-weight": "500",
-                "background": "none",
-                "border": "none",
-                "color": "black",
-                "font-size": "16px",
-                "cursor": "pointer",
-                "padding": "10px 20px",
-            }),
-            Div(
-                Button("CART", onclick="window.location.href='/basket';", style={
-                    "font-weight": "500",
-                    "background": "none",
-                    "border": "none",
-                    "color": "black",
-                    "font-size": "16px",
-                    "cursor": "pointer",
-                    "padding": "10px 20px",
-                }),
-                Button("LOGIN", onclick="window.location.href='/login';", style={
-                    "font-weight": "500",
-                    "background": "none",
-                    "border": "none",
-                    "color": "black",
-                    "font-size": "16px",
-                    "cursor": "pointer",
-                    "padding": "10px 20px",
-                }),
-                Button("Sign In", onclick="window.location.href='/register';", style={
-                    "font-weight": "500",
-                    "background": "none",
-                    "border": "none",
-                    "color": "black",
-                    "font-size": "16px",
-                    "cursor": "pointer",
-                    "padding": "10px 20px",
-                }),
-                style={
-                    "background-color": "white",
-                    "display": "flex",
-                    "gap": "20px",
-                    "margin-left": "auto",  # เลื่อนปุ่มไปทางขวา
-                }
-            ),
-            style={
-                "background-color": "white",
-                "display": "flex",
-                "align-items": "center",
-                "width": "100%",
-                "justify-content": "flex-start",  # ทำให้ปุ่มด้านซ้ายอยู่ที่ซ้ายสุด
-                "position": "absolute",  # ใช้ absolute positioning
-                "top": "0",  # จัดตำแหน่งที่ด้านบน
-                "left": "0",
-                "width": "100%",  # ทำให้ navbar กว้างเต็มหน้า
-                "z-index": "1000"  # ทำให้ navbar อยู่บนสุด
-            }
-        ),
+        
 
         # Title Section
         H1("เลือกช่องทางการรับออเดอร์", cls="title"),
@@ -1933,6 +1935,8 @@ def order_type():
             cls="order-container"
         )
     )
+    )
+    return grid_content
 
 @rt('/pickup')
 def get():
@@ -2129,7 +2133,7 @@ def delivery_page():
                     align-items: center;
                     justify-content: center;
                     text-align: center;
-                    margin-top: -200px;
+                    margin-top: -100px;
                 }
 
                 .title {
@@ -2595,39 +2599,71 @@ def get():
         """),
         H1("สร้างบัญชีผู้ใช้", cls="register-title"),
         Form(
-            Div(
-                Label("Name:", cls="name-label"),
-                Input(type="text", id="name", placeholder="ชื่อจริง", required=True, cls="input-field"),
-                cls="register-form"
-            ),
-            Div(
-                Label("Surname:", cls="surname-label"),
-                Input(type="text", id="surname", placeholder="นามสกุล", required=True, cls="input-field"),
-                cls="register-form"
-            ),
-            Div(
-                Label("Phone Number:", cls="phone-label"),
-                Input(type="text", id="tel_number", placeholder="หมายเลขโทรศัพท์", required=True, cls="input-field"),
-                cls="register-form"
-            ),
-            Div(
-                Label("Email:", cls="email-label"),
-                Input(type="email", id="email", placeholder="อีเมล", required=True, cls="input-field"),
-                cls="register-form"
-            ),
-            Div(
-                Label("Username:", cls="username-label2"),
-                Input(type="text", id="username", placeholder="ชื่อ Username", required=True, cls="input-field"),
-                cls="register-form"
-            ),
-            Div(
-                Label("Password:", cls="password-label2"),
-                Input(type="password", id="password", placeholder="รหัสผ่าน", required=True, cls="input-field"),
-                cls="register-form"
-            ),
-            Button("สร้างบัญชี", type="submit", cls="register-submit-button"),
-            method="post",
-            action="/register/submit"
+        Div(
+            Label("Name:", cls="name-label"),
+            Input(type="text", id="name", placeholder="ชื่อจริง", required=True, cls="input-field"),
+            cls="register-form"
+        ),
+        Div(
+            Label("Surname:", cls="surname-label"),
+            Input(type="text", id="surname", placeholder="นามสกุล", required=True, cls="input-field"),
+            cls="register-form"
+        ),
+        Div(
+            Label("Phone Number:", cls="phone-label"),
+            Input(type="text", id="tel_number", placeholder="หมายเลขโทรศัพท์", required=True, cls="input-field"),
+            cls="register-form"
+        ),
+        Div(
+            Label("Email:", cls="email-label"),
+            Input(type="email", id="email", placeholder="อีเมล", required=True, cls="input-field"),
+            cls="register-form"
+        ),
+        Div(
+            Label("Username:", cls="username-label2"),
+            Input(type="text", id="username", placeholder="ชื่อ Username", required=True, cls="input-field"),
+            cls="register-form"
+        ),
+        Div(
+            Label("Password:", cls="password-label2"),
+            Input(type="password", id="password", placeholder="รหัสผ่าน", required=True, cls="input-field"),
+            cls="register-form"
+        ),
+        Div(
+            Label("Confirm Password:", cls="confirm-password-label", style= {
+                "align-items": "left",
+            "justify-content": "center"
+            }),
+            Input(type="password", id="confirm_password", placeholder="ยืนยันรหัสผ่าน", required=True, cls="input-field"),
+            cls="register-form",
+            style={
+        "display": "flex",
+        "flex-direction": "column",  # จัดให้อยู่เรียงแนวตั้ง
+        "align-items": "flex-start",  # จัดให้อยู่ชิดซ้าย
+            }
+
+        ),
+        Button("สร้างบัญชี", type="submit", cls="register-submit-button", onclick="return validatePassword()"),
+        Script("""
+        function validatePassword() {
+            var password = document.getElementById("password").value;
+            var confirmPassword = document.getElementById("confirm_password").value;
+
+            if (password.length < 6) {
+                alert("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
+                return false;
+            }  
+            if (!/[0-9]/.test(password)) {
+                alert("รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว");
+                return false;
+            }
+            if (password !== confirmPassword) {
+                alert("รหัสผ่านไม่ตรงกัน กรุณาลองอีกครั้ง");
+                return false;
+            }
+            return true;
+        }
+        """)
         )
     ))
     return grid_content
@@ -2688,11 +2724,11 @@ def summary_page():
     member = session.get_current_user()
     order_delivery_by = None
     order_type = member.get_order_type()
-    bg_color = "#121212"
-    text_color = "#f5f5f5"
-    card_bg = "#424242"
-    card_text = "#ffffff"
-    border_color = "#555555"
+    bg_color = "#e69391"
+    text_color = "#000000"
+    card_bg = "#f0ede6"
+    card_text = "#000000"
+    border_color = "#ffffff"
 
     summary = system.summary_order()
 
@@ -2745,14 +2781,15 @@ def summary_page():
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;"
     )
 
+    H3(f"Price", style=f"margin-bottom: 10px; color:#ff3333;")
     coupon_and_total_group = Card(
-        H2("Order Summary", style=f"margin-bottom: 10px; color:#9BC2B2;"),
-        H3(f"Discount Applied: {discount_applied} THB"),
-        H3(f"Total Price: {total_price} THB", style=f"color: #9BC2B2;"),
+        
+        H2(f"Discount Applied: {discount_applied} THB", style=f"color: #000000;"),
+        H2(f"Total Price: {total_price} THB", style=f"color: #000000;"),
         style=f"padding: 20px; background-color: {card_bg}; border-radius: 10px;"
     )
-    member.reset_basket()
-    return Container(H1("Order Summary", style=f"text-align: center; color: {text_color};"), member_info_group, H2("Items in Basket", style=f"color: #F6C8B6;"), basket_group, coupon_and_total_group, style=f"padding: 30px; background-color: {bg_color};")
+    Button("Back to home", onclick="window.location='/'", style="background-color: red; color: white; padding: 10px 20px; border: none;")
+    return Container(H1("Order Summary", style=f"text-align: center; color: {text_color};"), member_info_group, H2("Items in Basket", style=f"color: #ff3333;"), basket_group, coupon_and_total_group, style=f"padding: 30px; background-color: {bg_color};")
 @rt("/account")
 def get(): 
     grid_content = []
@@ -2898,7 +2935,13 @@ def get():
             "box-sizing": "border-box",
         }
     ))
-    
+    grid_content.append(
+        Div(
+            H2("Manage Individual Menu", style={"text-align": "center", "margin-bottom": "20px"}),
+            H2("Boxset", style={"text-align": "center", "margin-bottom": "20px"}),
+            style={"width": "100%"}
+        )
+    )
     # ใช้ Grid Layout เพื่อจัดเรียงการ์ดให้สวย
     boxset_grid = Grid(
         *[
@@ -2946,12 +2989,7 @@ def get():
     )
 
     grid_content.append(boxset_grid)
-    grid_content.append(
-        Div(
-            H2("Manage Individual Menu", style={"text-align": "center", "margin-bottom": "20px"}),
-            style={"width": "100%"}
-        )
-    )
+    
 
     menu_type = [Savory, Dessert, Drink]
 
@@ -3008,6 +3046,102 @@ def get():
         )
 
         grid_content.append(menu_grid)
+
+    return Container(*grid_content)
+
+@rt("/restore/menu/{menu_id}")
+def restore_menu(menu_id: str):
+    member = session.get_current_user()
+    if not member:
+        return Redirect("/fail")  # กรณีไม่ได้ล็อกอิน
+
+    system.restore_food(menu_id, member)
+    return Redirect("/restore_delete_menu")  # กลับไปที่หน้าจัดการเมนู
+
+@rt("/restore/boxset/{boxset_id}")
+def restore_boxset(boxset_id: str):
+    manager = session.get_current_user()
+    if not manager:
+        return Redirect("/fail")  # ป้องกันกรณีไม่มีสิทธิ์
+
+    system.restore_boxset(boxset_id, manager)  
+    return Redirect("/restore_delete_menu")  # กลับไปที่หน้าจัดการเมนู
+
+
+@rt("/restore_delete_menu")
+def get():
+    menu = system.get_delete_menu() or []  # ป้องกันกรณี None
+    delete_boxset = [item for item in menu if isinstance(item, Boxset)]
+    delete_menu = [item for item in menu if isinstance(item, Food)]
+
+    grid_content = [managebar()]
+
+    # คำเตือน
+    grid_content.append(Div(
+        H3("PLEASE BE CAREFUL", style={
+            "color": "red",
+            "font-size": "24px",
+            "padding": "10px 20px",
+        }),
+        style={
+            "background-color": "black",
+            "color": "white",
+            "display": "flex",
+            "align-items": "center",
+            "justify-content": "center",
+            "height": "10vh",
+            "width": "99vw",
+        }
+    ))
+    grid_content.append(
+        Div(
+            H2("Manage Individual Menu", style={"text-align": "center", "margin-bottom": "20px"}),
+            H2("Boxset", style={"text-align": "center", "margin-bottom": "20px"}),
+            style={"width": "100%"}
+        )
+    )
+    # Grid ของ Boxset
+    boxset_grid = Grid(
+        *[
+            Card(
+                H3(boxset.get_name(), style={"font-size": "20px"}),
+                P(f"Price: {boxset.get_price()} THB"),
+                P(f"Main menu: {', '.join([food.get_name() for food in (boxset.get_fixed_menu() or [])])}"),
+                A(
+                    Button("Restore", style={"background": "green", "color": "white", "padding": "10px"}),
+                    href=f"/restore/boxset/{boxset.get_boxset_id()}"
+                ),
+                style={"border": "1px solid #ddd", "padding": "20px", "text-align": "center"}
+            ) for boxset in delete_boxset
+        ],
+        style={"display": "grid", "grid-template-columns": "repeat(auto-fill, minmax(250px, 1fr))"}
+    )
+
+    grid_content.append(boxset_grid)
+
+    # แสดงเมนูแต่ละประเภท
+    menu_type = [Savory, Dessert, Drink]
+    for type in menu_type:
+        menu_in_type = [food for food in delete_menu if isinstance(food, type)]
+        
+        if menu_in_type:
+            grid_content.append(H2(f"{type.__name__} Menu"))
+
+            menu_grid = Grid(
+                *[
+                    Card(
+                        H3(food.get_name()),
+                        P(f"Price: {food.get_price()} THB"),
+                        A(
+                            Button("Restore", style={"background": "green", "color": "white"}),
+                            href=f"/restore/menu/{food.get_food_id()}"
+                        ),
+                        style={"border": "1px solid #ddd", "padding": "20px", "text-align": "center"}
+                    ) for food in menu_in_type
+                ],
+                style={"display": "grid", "grid-template-columns": "repeat(auto-fill, minmax(250px, 1fr))"}
+            )
+            grid_content.append(menu_grid)
 
     return Container(*grid_content)
 
