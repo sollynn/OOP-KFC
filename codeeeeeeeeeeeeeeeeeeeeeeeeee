@@ -642,12 +642,20 @@ class Savory(Food):
         super().__init__(food_name, food_id, price, picture)
         self.__spicy_level = spicy_level
 
-    
+    def get_select(self):
+        return self.__spicy_level
+
+    def set_level(self,level):
+        self.__spicy_level = level
+
 class Dessert(Food):
     def __init__(self, food_name, food_id, price , picture, type = None):
         super().__init__(food_name, food_id, price,picture)
         self.__sugar_free = type
 
+    def get_select(self):
+        return self.__sugar_free
+    
 class Drink(Food):
     def __init__(self, food_name, food_id, price , picture , sweet_level = None):
         super().__init__(food_name, food_id, price , picture)
@@ -672,7 +680,12 @@ class Stock:
     def get_food_instance(self):
         return self.__food
 
+    def add_stock(self,total : int):
+        self.__amount += total
 
+    def get_total_amount(self):
+        return self.__amount
+    
 class Boxset:
     def __init__(self, name: str, boxset_id: str, menu: List[Food], price: int, picture):
         self.__boxset_name = name
@@ -1415,13 +1428,18 @@ def food_detail(food_id: str):
     
     # --- Form Section: รวม dropdown สำหรับเลือกเมนู และ input hidden สำหรับ counter ---
     form_content = []
-    
+
     # ตรวจสอบว่า food เป็น Drink
-    if isinstance(food, Drink) and food.get_select():
+    if isinstance(food,Drink):
+        level_content = ["ไม่หวาน", "หวานน้อย", "ปกติ", "หวานมาก"]
+    elif isinstance(food,Savory):
+        level_content = ["ไม่เผ็ด" , "เผ็ดน้อย" , "เผ็ดมาก" , "เผ็ดมากสุดๆ" , "เผ็ดนรก"]
+
+    if food.get_select():
         grid_content = [
             Grid(H3(f"Sweetness Level", style="color: white; background-color: #fdecd5; padding: 10px; border-radius: 5px; text-align: left"))
         ]
-        options = [Option(level) for level in ["ไม่หวาน", "หวานน้อย", "ปกติ", "หวานมาก"]]  # แก้ไข options
+        options = [Option(level) for level in level_content]  # แก้ไข options
         grid_content.append(
             Card(
                 Select(*options, name="select_sweet_level", style=""" 
@@ -1737,33 +1755,42 @@ def view_basket(coupon_code: str = ""):
         else:
             order_type_text = H2("PLEASE SELECT ORDER TYPE")
         
-
+        
         return Container(
-            H1("Your Basket"),
-            order_type_text,
-            Grid(
+            
+        navbar(),  
+        order_section(),  
+        
+    H1("Your Basket"),
+    order_type_text,
+    Grid(
+        *[
+            Card(
+                H3(item["name"].get_name()),
+                P(f"Quantity: {item['quantity']}"),
+                P(f"{item['name'].get_price()} THB"),
+                # ตรวจสอบและแสดงระดับความหวานหรือความเผ็ด
                 *[
-                    Card(
-                        H3(item["name"].get_name()),
-                        P(f"Quantity: {item['quantity']}"),
-                        P(f"{item['name'].get_price()} THB"),
-                    )
-                    for item in items
+                    P(f"Sweets Level: {item["name"].get_select()}") if (isinstance(item["name"],Drink)) and (item["name"].get_select()) else None,
+                    P(f"Spiciness Level: {item["name"].get_select()}") if (isinstance(item["name"],Savory)) and (item["name"].get_select()) else None
                 ]
-            ),
-            Form(
-                Label("Enter coupon code", Input(name="coupon_code", placeholder="Coupon code", value=coupon_code)),
-                Button("Use Code"),
-                method="get",
-                action="/basket"
-            ),
-            Div(
-                H3(f"Total Price (Before Discount): {total_price:.2f} THB"),
-                H3(f"Discount Applied: {discount_applied:.2f} THB"),
-                H3(f"Total After Discount: {discount_include:.2f} THB"),
-                Button("Checkout", onclick="window.location='/payment'", style="background-color: green; color: white; padding: 10px 20px; border: none;")
-            ),
-        )
+            )
+            for item in items
+        ]
+    ),
+    Form(
+        Label("Enter coupon code", Input(name="coupon_code", placeholder="Coupon code", value=coupon_code)),
+        Button("Use Code"),
+        method="get",
+        action="/basket"
+    ),
+    Div(
+        H3(f"Total Price (Before Discount): {total_price:.2f} THB"),
+        H3(f"Discount Applied: {discount_applied:.2f} THB"),
+        H3(f"Total After Discount: {discount_include:.2f} THB"),
+        Button("Checkout", onclick="window.location='/payment'", style="background-color: green; color: white; padding: 10px 20px; border: none;")
+    ),
+)
     else:
         grid_content = [
     navbar(),  # เรียกใช้ Navbar
@@ -2742,6 +2769,10 @@ def summary_page():
                 P(f"Quantity: {item['quantity']} pcs", style=f"color: {card_text};"),
                 P(f"Unit Price: {item["name"].get_price()} THB", style=f"color: {card_text};"),
                 P(f"Subtotal: {int(item["name"].get_price()) * int(item['quantity'])} THB", style=f"color: {card_text};"),
+                *[
+                    P(f"Sweets Level: {item["name"].get_select()}") if (isinstance(item["name"],Drink)) and (item["name"].get_select()) else None,
+                    P(f"Spiciness Level: {item["name"].get_select()}") if (isinstance(item["name"],Savory)) and (item["name"].get_select()) else None
+                ],
                 style=f"padding: 15px; background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 8px;"
             )
             for item in items
